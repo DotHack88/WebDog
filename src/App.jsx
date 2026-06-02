@@ -161,6 +161,19 @@ export default function App() {
     localStorage.setItem('webdog_reviews', JSON.stringify(reviews));
   }, [reviews]);
 
+  // Handle keyboard ESC close for mobile menu
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+    if (mobileMenuOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
+
   // Toast helper function
   const triggerToast = (title, message, type = 'success', channel = 'Email') => {
     const id = Date.now().toString();
@@ -504,7 +517,7 @@ export default function App() {
         </nav>
 
         {/* Header CTAs */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }} className="desktop-ctas">
           <button 
             onClick={() => setViewMode('admin')}
             className="btn btn-secondary"
@@ -521,7 +534,42 @@ export default function App() {
             Prenota Ora
           </a>
         </div>
+
+        {/* Mobile Hamburger Menu Toggle Button */}
+        <button 
+          className={`mobile-menu-toggle ${mobileMenuOpen ? 'open' : ''}`} 
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Menu"
+          aria-expanded={mobileMenuOpen}
+        >
+          <span className="line"></span>
+          <span className="line"></span>
+          <span className="line"></span>
+        </button>
       </header>
+
+      {/* Mobile Overlay Navigation Panel */}
+      <nav className={`mobile-nav-overlay ${mobileMenuOpen ? 'open' : ''}`}>
+        <a href="#home" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Home</a>
+        <a href="#about" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Chi Sono</a>
+        <a href="#servizi" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Servizi</a>
+        <a href="#prenotazioni" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Prenotazioni</a>
+        <a href="#recensioni" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Recensioni</a>
+        <a href="#gallery" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Gallery</a>
+        <a href="#contatti" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Contatti</a>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+          <a 
+            href="#prenotazioni" 
+            className="btn btn-primary"
+            style={{ padding: '12px 20px', fontSize: '0.95rem', borderRadius: '999px', textAlign: 'center' }}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Prenota Ora
+          </a>
+        </div>
+      </nav>
+
 
       {/* -------------------- HERO SECTION -------------------- */}
       <section id="home" className="section-padding" style={{
@@ -963,7 +1011,7 @@ export default function App() {
                 </p>
                 <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
                   <p>⏱️ Durata: <strong>30 o 60 minuti</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€15 (30m) / €25 (60m)</strong></p>
+                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€20 (30m) / €35 (60m)</strong></p>
                 </div>
               </div>
               <button onClick={() => handleServiceSelect('Passeggiata Cinofila (30m)')} className="btn btn-primary" style={{ width: '100%' }}>
@@ -981,7 +1029,7 @@ export default function App() {
                 </p>
                 <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
                   <p>⏱️ Durata: <strong>Giornata Intera</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€20 al giorno</strong></p>
+                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€35 al giorno</strong></p>
                 </div>
               </div>
               <button onClick={() => handleServiceSelect('Dog Sitting Diurno')} className="btn btn-primary" style={{ width: '100%' }}>
@@ -999,7 +1047,7 @@ export default function App() {
                 </p>
                 <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
                   <p>⏱️ Durata: <strong>A notte</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€35 a notte</strong></p>
+                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€45 a notte</strong></p>
                 </div>
               </div>
               <button onClick={() => handleServiceSelect('Dog Sitting Notturno')} className="btn btn-primary" style={{ width: '100%' }}>
@@ -1017,7 +1065,7 @@ export default function App() {
                 </p>
                 <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
                   <p>⏱️ Destinazione: <strong>Veterinario / Toeletta / Centro</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>Da €10</strong></p>
+                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>Da €15</strong></p>
                 </div>
               </div>
               <button onClick={() => handleServiceSelect('Servizio Navetta')} className="btn btn-primary" style={{ width: '100%' }}>
@@ -1708,7 +1756,7 @@ export default function App() {
                     </div>
                     <div>
                       <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', fontWeight: 600 }}>TELEFONO & WHATSAPP</span>
-                      <strong style={{ fontSize: '0.95rem' }}>+39 333 4567890</strong>
+                      <strong style={{ fontSize: '0.95rem' }}>+39 346 7251989</strong>
                     </div>
                   </div>
 
@@ -1728,17 +1776,17 @@ export default function App() {
                     </div>
                     <div>
                       <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', fontWeight: 600 }}>INDIRIZZO SEDE & CAMPO</span>
-                      <strong style={{ fontSize: '0.95rem' }}>Via dei Colli, 12 - Firenze (FI)</strong>
+                      <strong style={{ fontSize: '0.95rem' }}>Via Raffaele Ruggiero, 219, (NA)</strong>
                     </div>
                   </div>
                 </div>
 
                 {/* Quick actions buttons call/WhatsApp */}
                 <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
-                  <a href="tel:+393334567890" className="btn btn-primary" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', gap: '4px', borderRadius: '8px' }}>
+                  <a href="tel:+393467251989" className="btn btn-primary" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', gap: '4px', borderRadius: '8px' }}>
                     📞 Chiama
                   </a>
-                  <a href="https://wa.me/393334567890" className="btn btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', gap: '4px', borderRadius: '8px', background: '#25d366', color: 'white', borderColor: 'transparent' }}>
+                  <a href="https://wa.me/393467251989" className="btn btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', gap: '4px', borderRadius: '8px', background: '#25d366', color: 'white', borderColor: 'transparent' }}>
                     💬 WhatsApp
                   </a>
                   <a href="mailto:info@webdog.it" className="btn btn-outline" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', gap: '4px', borderRadius: '8px' }}>
