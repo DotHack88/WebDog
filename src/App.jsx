@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Dog, Activity, Calendar, DollarSign, Phone, Shield, Heart, Award, 
-  FileText, Check, ChevronLeft, ChevronRight, Star, MapPin, Mail, 
+import {
+  Dog, Activity, Calendar, DollarSign, Phone, Shield, Heart, Award,
+  FileText, Check, ChevronLeft, ChevronRight, Star, MapPin, Mail,
   Send, MessageSquare, Menu, X, Sliders, Eye, Sparkles
 } from 'lucide-react';
 import AdminPortal from './components/AdminPortal';
@@ -114,7 +114,7 @@ export default function App() {
   });
 
   const [toasts, setToasts] = useState([]);
-  
+
   // Gallery Lightbox state
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [activeGalleryFilter, setActiveGalleryFilter] = useState('Tutti');
@@ -188,9 +188,9 @@ export default function App() {
   const handleServiceSelect = (serviceName) => {
     setBookingForm((prev) => ({ ...prev, service: serviceName }));
     triggerToast(
-      'Servizio Selezionato', 
-      `Hai scelto: ${serviceName}. Completa il modulo sottostante.`, 
-      'info', 
+      'Servizio Selezionato',
+      `Hai scelto: ${serviceName}. Completa il modulo sottostante.`,
+      'info',
       'Sito Web'
     );
     const element = document.getElementById('prenotazioni');
@@ -221,18 +221,18 @@ export default function App() {
 
     // Send mock client alerts
     triggerToast(
-      'Prenotazione Inviata', 
-      `Grazie ${bookingForm.firstName}! Appuntamento per ${bookingForm.dogName} registrato. Attendi la conferma.`, 
-      'success', 
+      'Prenotazione Inviata',
+      `Grazie ${bookingForm.firstName}! Appuntamento per ${bookingForm.dogName} registrato. Attendi la conferma.`,
+      'success',
       'Email e SMS'
     );
 
     // Send mock operator notification
     setTimeout(() => {
       triggerToast(
-        'Nuova Prenotazione Ricevuta', 
-        `Nuovo appuntamento da approvare da parte di ${bookingForm.firstName} ${bookingForm.lastName} per ${bookingForm.dogName}.`, 
-        'warning', 
+        'Nuova Prenotazione Ricevuta',
+        `Nuovo appuntamento da approvare da parte di ${bookingForm.firstName} ${bookingForm.lastName} per ${bookingForm.dogName}.`,
+        'warning',
         'Telegram Bot'
       );
     }, 2500);
@@ -272,18 +272,18 @@ export default function App() {
 
     setReviews((prev) => [newReview, ...prev]);
     triggerToast(
-      'Recensione Pubblicata', 
-      'Grazie per il tuo feedback! La tua recensione è visibile online.', 
-      'success', 
+      'Recensione Pubblicata',
+      'Grazie per il tuo feedback! La tua recensione è visibile online.',
+      'success',
       'Sito Web'
     );
 
     // Alert operator of review
     setTimeout(() => {
       triggerToast(
-        'Nuova Recensione Ricevuta', 
-        `Il cliente ${reviewForm.name} ha valutato il servizio con ${reviewForm.rating} stelle!`, 
-        'info', 
+        'Nuova Recensione Ricevuta',
+        `Il cliente ${reviewForm.name} ha valutato il servizio con ${reviewForm.rating} stelle!`,
+        'info',
         'Telegram Bot'
       );
     }, 2000);
@@ -300,16 +300,16 @@ export default function App() {
   // Download PDF certificate simulation
   const simulateCertificateDownload = (certName) => {
     triggerToast(
-      'Download Attestato', 
-      `Preparazione file: ${certName}.pdf...`, 
-      'info', 
+      'Download Attestato',
+      `Preparazione file: ${certName}.pdf...`,
+      'info',
       'Download Manager'
     );
     setTimeout(() => {
       triggerToast(
-        'Download Completato', 
-        `Il certificato "${certName}" (PDF, 420KB) è stato salvato nei tuoi download.`, 
-        'success', 
+        'Download Completato',
+        `Il certificato "${certName}" (PDF, 420KB) è stato salvato nei tuoi download.`,
+        'success',
         'System'
       );
     }, 1800);
@@ -329,16 +329,16 @@ export default function App() {
         const updated = { ...b, status: newStatus };
         if (newStatus === 'confirmed') {
           triggerToast(
-            'Appuntamento Confermato', 
-            `Notifica di conferma inviata con successo al proprietario di ${b.dogName}.`, 
-            'success', 
+            'Appuntamento Confermato',
+            `Notifica di conferma inviata con successo al proprietario di ${b.dogName}.`,
+            'success',
             'WhatsApp API'
           );
         } else if (newStatus === 'cancelled') {
           triggerToast(
-            'Slot Annullato', 
-            `Notifica di cancellazione/rimborso inviata al cliente ${b.firstName}.`, 
-            'error', 
+            'Slot Annullato',
+            `Notifica di cancellazione/rimborso inviata al cliente ${b.firstName}.`,
+            'error',
             'Email Server'
           );
         }
@@ -353,9 +353,9 @@ export default function App() {
       if (b.id === id) {
         const updated = { ...b, ...updatedFields };
         triggerToast(
-          'Appuntamento Spostato', 
-          `Nuovi dettagli inviati a ${b.firstName}: ${updatedFields.date} ore ${updatedFields.time}.`, 
-          'success', 
+          'Appuntamento Spostato',
+          `Nuovi dettagli inviati a ${b.firstName}: ${updatedFields.date} ore ${updatedFields.time}.`,
+          'success',
           'WhatsApp API'
         );
         return updated;
@@ -367,9 +367,9 @@ export default function App() {
   const deleteBooking = (id) => {
     setBookings((prev) => prev.filter((b) => b.id !== id));
     triggerToast(
-      'Prenotazione Rimossa', 
-      'La prenotazione è stata eliminata definitivamente dall\'archivio storico.', 
-      'warning', 
+      'Prenotazione Rimossa',
+      'La prenotazione è stata eliminata definitivamente dall\'archivio storico.',
+      'warning',
       'System Database'
     );
   };
@@ -398,7 +398,7 @@ export default function App() {
   for (let d = 1; d <= 30; d++) {
     const dateStr = `2026-06-${d < 10 ? '0' + d : d}`;
     let status = 'available';
-    
+
     // Check if there is an actual booking on this day
     const bookingOnDay = bookings.find((b) => b.date === dateStr);
     if (bookingOnDay) {
@@ -419,9 +419,9 @@ export default function App() {
   const handleCalendarDayClick = (day) => {
     if (day.status === 'occupied') {
       triggerToast(
-        'Giorno Non Disponibile', 
-        'Questo slot è al completo. Scegli una giornata evidenziata in verde o contattaci su WhatsApp.', 
-        'error', 
+        'Giorno Non Disponibile',
+        'Questo slot è al completo. Scegli una giornata evidenziata in verde o contattaci su WhatsApp.',
+        'error',
         'Calendario'
       );
       return;
@@ -429,9 +429,9 @@ export default function App() {
     setSelectedCalendarDay(day.dayNum);
     setBookingForm((prev) => ({ ...prev, date: day.dateStr }));
     triggerToast(
-      'Data Selezionata', 
-      `Hai scelto il ${day.dayNum} Giugno 2026 per il tuo appuntamento.`, 
-      'success', 
+      'Data Selezionata',
+      `Hai scelto il ${day.dayNum} Giugno 2026 per il tuo appuntamento.`,
+      'success',
       'Calendario'
     );
   };
@@ -440,8 +440,8 @@ export default function App() {
   const averageStars = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
 
   // Gallery slideshow actions
-  const filteredGallery = activeGalleryFilter === 'Tutti' 
-    ? galleryImages 
+  const filteredGallery = activeGalleryFilter === 'Tutti'
+    ? galleryImages
     : galleryImages.filter(img => img.category === activeGalleryFilter);
 
   const openLightbox = (index) => {
@@ -462,7 +462,7 @@ export default function App() {
   if (viewMode === 'admin') {
     return (
       <>
-        <AdminPortal 
+        <AdminPortal
           bookings={bookings}
           updateBookingStatus={updateBookingStatus}
           updateBookingDetails={updateBookingDetails}
@@ -493,7 +493,7 @@ export default function App() {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        
+
         {/* Logo */}
         <a href="#home" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: '#0f766e' }}>
           <span style={{ fontSize: '1.8rem' }}>🐾</span>
@@ -518,16 +518,16 @@ export default function App() {
 
         {/* Header CTAs */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }} className="desktop-ctas">
-          <button 
+          <button
             onClick={() => setViewMode('admin')}
             className="btn btn-secondary"
             style={{ padding: '8px 16px', fontSize: '0.8rem', gap: '6px', borderRadius: '999px' }}
           >
             <Sliders size={14} /> Gestionale Admin
           </button>
-          
-          <a 
-            href="#prenotazioni" 
+
+          <a
+            href="#prenotazioni"
             className="btn btn-primary"
             style={{ padding: '8px 20px', fontSize: '0.8rem', borderRadius: '999px' }}
           >
@@ -536,8 +536,8 @@ export default function App() {
         </div>
 
         {/* Mobile Hamburger Menu Toggle Button */}
-        <button 
-          className={`mobile-menu-toggle ${mobileMenuOpen ? 'open' : ''}`} 
+        <button
+          className={`mobile-menu-toggle ${mobileMenuOpen ? 'open' : ''}`}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Menu"
           aria-expanded={mobileMenuOpen}
@@ -557,10 +557,10 @@ export default function App() {
         <a href="#recensioni" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Recensioni</a>
         <a href="#gallery" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Gallery</a>
         <a href="#contatti" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Contatti</a>
-        
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
-          <a 
-            href="#prenotazioni" 
+          <a
+            href="#prenotazioni"
             className="btn btn-primary"
             style={{ padding: '12px 20px', fontSize: '0.95rem', borderRadius: '999px', textAlign: 'center' }}
             onClick={() => setMobileMenuOpen(false)}
@@ -608,7 +608,7 @@ export default function App() {
             gap: '48px',
             alignItems: 'center'
           }}>
-            
+
             {/* Left Column Text */}
             <div>
               <span className="badge" style={{ marginBottom: '16px' }}>
@@ -662,9 +662,9 @@ export default function App() {
                 overflow: 'hidden',
                 border: '8px solid rgba(255, 255, 255, 0.4)'
               }} className="floating-icon">
-                <img 
-                  src="/chi_sono_profile.png" 
-                  alt="WebDog Professional" 
+                <img
+                  src="/chi_sono_profile.png"
+                  alt="WebDog Professional"
                   style={{
                     width: '100%',
                     height: '100%',
@@ -823,7 +823,7 @@ export default function App() {
             gap: '56px',
             alignItems: 'center'
           }}>
-            
+
             {/* Left Photo panel */}
             <div style={{ position: 'relative' }}>
               <div style={{
@@ -833,9 +833,9 @@ export default function App() {
                 boxShadow: 'var(--shadow-lg)',
                 border: '4px solid white'
               }}>
-                <img 
-                  src="/chi_sono_profile.png" 
-                  alt="Chi Sono Professional Trainer" 
+                <img
+                  src="/chi_sono_profile.png"
+                  alt="Chi Sono Professional Trainer"
                   style={{ width: '100%', height: 'auto', display: 'block' }}
                 />
               </div>
@@ -959,17 +959,17 @@ export default function App() {
                     Scarica le mie certificazioni professionali ufficiali in formato PDF ad alta definizione.
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <button 
+                    <button
                       onClick={() => simulateCertificateDownload('Diploma_Educatore_Cinofilo')}
-                      className="btn btn-outline" 
+                      className="btn btn-outline"
                       style={{ padding: '8px 16px', fontSize: '0.8rem', justifyContent: 'space-between', borderRadius: '8px' }}
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><FileText size={16} /> Diploma Educatore Cinofilo.pdf</span>
                       <strong style={{ color: '#0f766e' }}>Scarica</strong>
                     </button>
-                    <button 
+                    <button
                       onClick={() => simulateCertificateDownload('Attestato_Primo_Soccorso')}
-                      className="btn btn-outline" 
+                      className="btn btn-outline"
                       style={{ padding: '8px 16px', fontSize: '0.8rem', justifyContent: 'space-between', borderRadius: '8px' }}
                     >
                       <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><FileText size={16} /> Attestato Primo Soccorso Cane.pdf</span>
@@ -1130,7 +1130,7 @@ export default function App() {
             gap: '40px',
             alignItems: 'start'
           }}>
-            
+
             {/* LEFT COLUMN: INTERACTIVE MONTH CALENDAR */}
             <div className="glass-panel" style={{ padding: '24px' }}>
               <div className="calendar-container">
@@ -1147,21 +1147,20 @@ export default function App() {
                   {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map((d) => (
                     <div key={d} className="calendar-day-label">{d}</div>
                   ))}
-                  
+
                   {/* Monthly Days mapping */}
                   {calendarDays.map((day) => (
-                    <div 
+                    <div
                       key={day.dayNum}
                       onClick={() => handleCalendarDayClick(day)}
                       className={`calendar-cell ${selectedCalendarDay === day.dayNum ? 'selected' : ''}`}
                     >
                       <span className="calendar-cell-num">{day.dayNum}</span>
-                      
+
                       {/* Status indicator dot */}
-                      <span className={`calendar-cell-status ${
-                        day.status === 'available' ? 'status-available' :
-                        day.status === 'pending' ? 'status-pending' : 'status-occupied'
-                      }`} />
+                      <span className={`calendar-cell-status ${day.status === 'available' ? 'status-available' :
+                          day.status === 'pending' ? 'status-pending' : 'status-occupied'
+                        }`} />
                     </div>
                   ))}
                 </div>
@@ -1202,24 +1201,24 @@ export default function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
                     <label className="form-label">NOME</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Emanuele"
                       value={bookingForm.firstName}
-                      onChange={(e) => setBookingForm({...bookingForm, firstName: e.target.value})}
-                      required 
-                      className="form-input" 
+                      onChange={(e) => setBookingForm({ ...bookingForm, firstName: e.target.value })}
+                      required
+                      className="form-input"
                     />
                   </div>
                   <div>
                     <label className="form-label">COGNOME</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Vanni"
                       value={bookingForm.lastName}
-                      onChange={(e) => setBookingForm({...bookingForm, lastName: e.target.value})}
-                      required 
-                      className="form-input" 
+                      onChange={(e) => setBookingForm({ ...bookingForm, lastName: e.target.value })}
+                      required
+                      className="form-input"
                     />
                   </div>
                 </div>
@@ -1227,24 +1226,24 @@ export default function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
                     <label className="form-label">TELEFONO</label>
-                    <input 
-                      type="tel" 
+                    <input
+                      type="tel"
                       placeholder="3334567890"
                       value={bookingForm.phone}
-                      onChange={(e) => setBookingForm({...bookingForm, phone: e.target.value})}
-                      required 
-                      className="form-input" 
+                      onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                      required
+                      className="form-input"
                     />
                   </div>
                   <div>
                     <label className="form-label">E-MAIL</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       placeholder="proprietario@cane.it"
                       value={bookingForm.email}
-                      onChange={(e) => setBookingForm({...bookingForm, email: e.target.value})}
-                      required 
-                      className="form-input" 
+                      onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
+                      required
+                      className="form-input"
                     />
                   </div>
                 </div>
@@ -1252,37 +1251,37 @@ export default function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '10px', marginBottom: '16px' }}>
                   <div>
                     <label className="form-label">NOME CANE</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Thor"
                       value={bookingForm.dogName}
-                      onChange={(e) => setBookingForm({...bookingForm, dogName: e.target.value})}
-                      required 
-                      className="form-input" 
+                      onChange={(e) => setBookingForm({ ...bookingForm, dogName: e.target.value })}
+                      required
+                      className="form-input"
                     />
                   </div>
                   <div>
                     <label className="form-label">RAZZA</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Golden"
                       value={bookingForm.dogBreed}
-                      onChange={(e) => setBookingForm({...bookingForm, dogBreed: e.target.value})}
-                      required 
-                      className="form-input" 
+                      onChange={(e) => setBookingForm({ ...bookingForm, dogBreed: e.target.value })}
+                      required
+                      className="form-input"
                     />
                   </div>
                   <div>
                     <label className="form-label">ETÀ CANE (ANNI)</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       placeholder="3"
                       min="0"
                       max="25"
                       value={bookingForm.dogAge}
-                      onChange={(e) => setBookingForm({...bookingForm, dogAge: e.target.value})}
-                      required 
-                      className="form-input" 
+                      onChange={(e) => setBookingForm({ ...bookingForm, dogAge: e.target.value })}
+                      required
+                      className="form-input"
                     />
                   </div>
                 </div>
@@ -1290,9 +1289,9 @@ export default function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div>
                     <label className="form-label">SERVIZIO RICHIESTO</label>
-                    <select 
+                    <select
                       value={bookingForm.service}
-                      onChange={(e) => setBookingForm({...bookingForm, service: e.target.value})}
+                      onChange={(e) => setBookingForm({ ...bookingForm, service: e.target.value })}
                       className="form-input"
                     >
                       <option value="Passeggiata Cinofila (30m)">Passeggiata Cinofila (30m)</option>
@@ -1306,12 +1305,12 @@ export default function App() {
                   </div>
                   <div>
                     <label className="form-label">ORARIO</label>
-                    <input 
-                      type="time" 
+                    <input
+                      type="time"
                       value={bookingForm.time}
-                      onChange={(e) => setBookingForm({...bookingForm, time: e.target.value})}
-                      required 
-                      className="form-input" 
+                      onChange={(e) => setBookingForm({ ...bookingForm, time: e.target.value })}
+                      required
+                      className="form-input"
                     />
                   </div>
                 </div>
@@ -1319,10 +1318,10 @@ export default function App() {
                 {/* Selected calendar day highlight in form */}
                 <div style={{ marginBottom: '20px' }}>
                   <label className="form-label">DATA SELEZIONATA</label>
-                  <input 
-                    type="text" 
-                    value={bookingForm.date ? new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Scegli dal calendario a sinistra 📅'} 
-                    disabled 
+                  <input
+                    type="text"
+                    value={bookingForm.date ? new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Scegli dal calendario a sinistra 📅'}
+                    disabled
                     className="form-input"
                     style={{ background: bookingForm.date ? '#d1fae5' : '#fee2e2', border: 'none', fontWeight: 700, color: '#042f2e' }}
                   />
@@ -1330,10 +1329,10 @@ export default function App() {
 
                 <div style={{ marginBottom: '20px' }}>
                   <label className="form-label">NOTE SPECIALI O PATOLOGIE</label>
-                  <textarea 
+                  <textarea
                     placeholder="Scrivi qui eventuali fobie, allergie o raccomandazioni importanti..."
                     value={bookingForm.notes}
-                    onChange={(e) => setBookingForm({...bookingForm, notes: e.target.value})}
+                    onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
                     rows="2"
                     className="form-input"
                     style={{ resize: 'none' }}
@@ -1353,21 +1352,21 @@ export default function App() {
                   </span>
                   <div style={{ display: 'flex', gap: '16px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
-                      <input 
-                        type="radio" 
-                        name="payment" 
+                      <input
+                        type="radio"
+                        name="payment"
                         value="sede"
                         checked={bookingForm.paymentMethod === 'sede'}
-                        onChange={() => setBookingForm({...bookingForm, paymentMethod: 'sede'})}
+                        onChange={() => setBookingForm({ ...bookingForm, paymentMethod: 'sede' })}
                       /> In Sede (Posticipato)
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
-                      <input 
-                        type="radio" 
-                        name="payment" 
+                      <input
+                        type="radio"
+                        name="payment"
                         value="online"
                         checked={bookingForm.paymentMethod === 'online'}
-                        onChange={() => setBookingForm({...bookingForm, paymentMethod: 'online'})}
+                        onChange={() => setBookingForm({ ...bookingForm, paymentMethod: 'online' })}
                       /> Online (Stripe, PayPal, CC)
                     </label>
                   </div>
@@ -1394,11 +1393,11 @@ export default function App() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '24px' }}>
-                  <input 
-                    type="checkbox" 
-                    id="gdpr" 
+                  <input
+                    type="checkbox"
+                    id="gdpr"
                     checked={bookingForm.gdpr}
-                    onChange={(e) => setBookingForm({...bookingForm, gdpr: e.target.checked})}
+                    onChange={(e) => setBookingForm({ ...bookingForm, gdpr: e.target.checked })}
                     required
                     style={{ marginTop: '4px', cursor: 'pointer' }}
                   />
@@ -1434,7 +1433,7 @@ export default function App() {
             gap: '40px',
             alignItems: 'start'
           }}>
-            
+
             {/* LEFT COLUMN: REVIEWS AGGREGATE STATS & FEEDBACK SUBMISSION */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
@@ -1442,7 +1441,7 @@ export default function App() {
                 <h3 style={{ fontSize: '3rem', fontWeight: 800, color: '#0f766e', margin: '4px 0' }}>
                   {averageStars} <span style={{ fontSize: '1.25rem', color: '#cbd5e1' }}>/ 5.0</span>
                 </h3>
-                
+
                 {/* Stars aggregation overlay */}
                 <div className="star-rating" style={{ justifyContent: 'center', marginBottom: '12px' }}>
                   {[...Array(5)].map((_, idx) => (
@@ -1458,40 +1457,40 @@ export default function App() {
                   <h4 style={{ fontWeight: 800, fontSize: '1.1rem', color: '#0f2d2a', marginBottom: '16px' }}>
                     Lascia la tua Recensione
                   </h4>
-                  
+
                   <div style={{ marginBottom: '12px' }}>
                     <label className="form-label">NOME CLIENTE</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Alessandro N."
                       value={reviewForm.name}
-                      onChange={(e) => setReviewForm({...reviewForm, name: e.target.value})}
+                      onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
                       required
-                      className="form-input" 
+                      className="form-input"
                     />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                     <div>
                       <label className="form-label">NOME CANE</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="Thor"
                         value={reviewForm.dogName}
-                        onChange={(e) => setReviewForm({...reviewForm, dogName: e.target.value})}
+                        onChange={(e) => setReviewForm({ ...reviewForm, dogName: e.target.value })}
                         required
-                        className="form-input" 
+                        className="form-input"
                       />
                     </div>
                     <div>
                       <label className="form-label">RAZZA</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="Golden"
                         value={reviewForm.dogBreed}
-                        onChange={(e) => setReviewForm({...reviewForm, dogBreed: e.target.value})}
+                        onChange={(e) => setReviewForm({ ...reviewForm, dogBreed: e.target.value })}
                         required
-                        className="form-input" 
+                        className="form-input"
                       />
                     </div>
                   </div>
@@ -1500,10 +1499,10 @@ export default function App() {
                     <label className="form-label">VALUTAZIONE (1-5 STELLE)</label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       {[1, 2, 3, 4, 5].map((val) => (
-                        <Star 
+                        <Star
                           key={val}
                           size={24}
-                          onClick={() => setReviewForm({...reviewForm, rating: val})}
+                          onClick={() => setReviewForm({ ...reviewForm, rating: val })}
                           style={{
                             cursor: 'pointer',
                             color: val <= reviewForm.rating ? '#fbbf24' : '#cbd5e1',
@@ -1518,10 +1517,10 @@ export default function App() {
 
                   <div style={{ marginBottom: '20px' }}>
                     <label className="form-label">IL TUO COMMENTO</label>
-                    <textarea 
+                    <textarea
                       placeholder="Raccontaci la tua esperienza con il servizio cinofilo..."
                       value={reviewForm.comment}
-                      onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
+                      onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                       required
                       rows="3"
                       className="form-input"
@@ -1554,7 +1553,7 @@ export default function App() {
                         fontWeight: 700,
                         fontSize: '0.9rem'
                       }}>
-                        {rev.name.substring(0,2).toUpperCase()}
+                        {rev.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <h5 style={{ fontWeight: 800, fontSize: '0.95rem' }}>{rev.name}</h5>
@@ -1566,13 +1565,13 @@ export default function App() {
 
                     <div className="star-rating">
                       {[...Array(5)].map((_, starIdx) => (
-                        <Star 
-                          key={starIdx} 
-                          size={14} 
-                          style={{ 
+                        <Star
+                          key={starIdx}
+                          size={14}
+                          style={{
                             color: starIdx < rev.rating ? '#fbbf24' : '#cbd5e1',
                             fill: starIdx < rev.rating ? '#fbbf24' : 'transparent'
-                          }} 
+                          }}
                         />
                       ))}
                     </div>
@@ -1581,7 +1580,7 @@ export default function App() {
                   <p style={{ fontStyle: 'italic', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
                     "{rev.comment}"
                   </p>
-                  
+
                   <span style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8', textAlign: 'right', marginTop: '12px' }}>
                     Data recensione: {rev.date}
                   </span>
@@ -1596,7 +1595,7 @@ export default function App() {
       {/* -------------------- PHOTO GALLERY WITH CATEGORIES & LIGHTBOX -------------------- */}
       <section id="gallery" className="section-padding" style={{ background: '#f8fafc' }}>
         <div className="container">
-          
+
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <span className="badge">📸 GALLERIA ATTIVITÀ</span>
             <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Momenti di Felicità Cinofila</h2>
@@ -1642,7 +1641,7 @@ export default function App() {
             gap: '24px'
           }}>
             {filteredGallery.map((img, index) => (
-              <div 
+              <div
                 key={img.id}
                 onClick={() => openLightbox(index)}
                 className="glass-card"
@@ -1654,8 +1653,8 @@ export default function App() {
                 }}
               >
                 <div style={{ overflow: 'hidden', aspectRatio: '4/3' }}>
-                  <img 
-                    src={img.src} 
+                  <img
+                    src={img.src}
                     alt={img.title}
                     style={{
                       width: '100%',
@@ -1668,7 +1667,7 @@ export default function App() {
                     onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1.0)'}
                   />
                 </div>
-                
+
                 <div style={{ padding: '16px' }}>
                   <span className="badge" style={{ fontSize: '0.65rem', padding: '2px 8px', marginBottom: '6px' }}>
                     {img.category}
@@ -1686,7 +1685,7 @@ export default function App() {
       {lightboxIndex !== null && (
         <div className="lightbox" onClick={() => setLightboxIndex(null)}>
           <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
-            
+
             {/* Close button */}
             <button className="lightbox-close" onClick={() => setLightboxIndex(null)}>
               <X size={32} />
@@ -1701,10 +1700,10 @@ export default function App() {
             </button>
 
             {/* Slideshow image */}
-            <img 
+            <img
               className="lightbox-img"
-              src={filteredGallery[lightboxIndex].src} 
-              alt={filteredGallery[lightboxIndex].title} 
+              src={filteredGallery[lightboxIndex].src}
+              alt={filteredGallery[lightboxIndex].title}
             />
 
             {/* Caption */}
@@ -1741,14 +1740,14 @@ export default function App() {
             gap: '40px',
             alignItems: 'start'
           }}>
-            
+
             {/* Left Column Information */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div className="glass-panel" style={{ padding: '28px' }}>
                 <h4 style={{ fontWeight: 800, fontSize: '1.2rem', color: '#042f2e', marginBottom: '20px' }}>
                   Recapiti Diretti
                 </h4>
-                
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div style={{ background: '#ccfbf1', color: '#0f766e', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1800,7 +1799,7 @@ export default function App() {
                 <h4 style={{ fontWeight: 800, fontSize: '1.05rem', color: '#042f2e', marginBottom: '12px' }}>
                   Area Copertura Servizi
                 </h4>
-                
+
                 {/* SVG vector custom vector styled map */}
                 <div style={{
                   width: '100%',
@@ -1814,14 +1813,14 @@ export default function App() {
                   <svg viewBox="0 0 300 180" style={{ width: '100%', height: '100%' }}>
                     {/* Simulated river */}
                     <path d="M0,90 Q75,70 150,110 T300,90" fill="none" stroke="#bae6fd" strokeWidth="12" />
-                    
+
                     {/* Grid streets */}
                     <line x1="50" y1="0" x2="50" y2="180" stroke="#cbd5e1" strokeWidth="2" />
                     <line x1="180" y1="0" x2="180" y2="180" stroke="#cbd5e1" strokeWidth="2" />
                     <line x1="250" y1="0" x2="250" y2="180" stroke="#cbd5e1" strokeWidth="1.5" />
                     <line x1="0" y1="40" x2="300" y2="40" stroke="#cbd5e1" strokeWidth="2" />
                     <line x1="0" y1="140" x2="300" y2="140" stroke="#cbd5e1" strokeWidth="2.5" />
-                    
+
                     {/* Green zone (campo cinofilo) */}
                     <rect x="20" y="50" width="80" height="70" rx="10" fill="#dcfce7" opacity="0.8" stroke="#86efac" strokeWidth="1" />
                     <text x="60" y="90" fontSize="8" fontWeight="bold" fill="#15803d" textAnchor="middle">Centro Cinofilo</text>
@@ -1839,7 +1838,7 @@ export default function App() {
                     <circle cx="90" cy="15" r="4" fill="#fbbf24" />
                     <text x="90" y="10" fontSize="6" fontWeight="bold" fill="#d97706" textAnchor="middle">Toelettatura</text>
                   </svg>
-                  
+
                   {/* Floating legend tag */}
                   <span style={{
                     position: 'absolute',
@@ -1951,7 +1950,7 @@ export default function App() {
       </footer>
 
       {/* Floating quick shortcut toggle button for Admin Mode */}
-      <button 
+      <button
         onClick={() => setViewMode('admin')}
         className="admin-badge-toggle"
         title="Clicca per aprire la dashboard gestionale amministratore"
