@@ -377,11 +377,13 @@ export default function App() {
   // Price & Duration calculator for Form visual preview
   const getSelectedServiceDetails = () => {
     switch (bookingForm.service) {
-      case 'Passeggiata Cinofila (30m)': return { price: 15, duration: '30 minuti' };
-      case 'Passeggiata Cinofila (60m)': return { price: 25, duration: '60 minuti' };
-      case 'Dog Sitting Diurno': return { price: 20, duration: 'Giornata Intera (8:00 - 19:00)' };
-      case 'Dog Sitting Notturno': return { price: 35, duration: '1 Notte Custodia' };
-      case 'Servizio Navetta': return { price: 15, duration: 'Trasporto A/R' }; // estimated
+      case 'Dog Sitting Diurno (Sitter)': return { price: 25, duration: 'Mezza Giornata' };
+      case 'Dog Sitting Pensione (Sitter)': return { price: 35, duration: '24 ore con pernottamento' };
+      case 'Dog Sitting Diurno (Domicilio)': return { price: 40, duration: 'Mezza/Giornata Intera' };
+      case 'Dog Sitting Pensione': return { price: 50, duration: '24 ore con pernottamento' };
+      case 'Dog Walking (30m)': return { price: 20, duration: '30 minuti' };
+      case 'Dog Walking (60m)': return { price: 35, duration: '60 minuti' };
+      case 'Servizio Navetta': return { price: 15, duration: 'Trasporto A/R' };
       case 'Educazione Base': return { price: 30, duration: '1 Sessione (60m)' };
       case 'Consulenza Pre-Adozione': return { price: 25, duration: '1 Sessione (45m)' };
       default: return { price: 20, duration: 'Da concordare' };
@@ -863,7 +865,7 @@ export default function App() {
             {/* Right Information panel */}
             <div>
               <span className="badge">👤 CHI SONO</span>
-              <h2 className="section-title">Emanuele Vanni</h2>
+              <h2 className="section-title">Emanuele Barese</h2>
               <span style={{ fontWeight: 700, color: '#0f766e', fontSize: '1.1rem', display: 'block', marginBottom: '16px' }}>
                 Educatore Cinofilo & Operatore del Benessere Animale
               </span>
@@ -911,7 +913,9 @@ export default function App() {
                     <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Check size={16} style={{ color: '#10b981' }} /> Pratica Gentile</li>
                     <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Check size={16} style={{ color: '#10b981' }} /> No metodi coercitivi</li>
                     <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Check size={16} style={{ color: '#10b981' }} /> Supporto h24</li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Check size={16} style={{ color: '#10b981' }} /> Assicurazione RC attiva</li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Check size={16} style={{ color: '#10b981' }} /> Assicurazione RC attiva</li> 
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Check size={16} style={{ color: '#10b981' }} /> Agilista sportivo</li>
+                    <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Check size={16} style={{ color: '#10b981' }} /> Educazione di base</li>
                   </ul>
                 </div>
               )}
@@ -924,7 +928,8 @@ export default function App() {
                     { name: 'Dog Sitting & Cura h24', desc: 'Custodia attenta presso il domicilio del proprietario.' },
                     { name: 'Passeggiate Educative', desc: 'Uscite in natura focalizzate su stimoli olfattivi e calma.' },
                     { name: 'Gestione Cuccioli (Puppy Classes)', desc: 'Prevenzione problemi comportamentali e socializzazione.' },
-                    { name: 'Supporto ai Proprietari', desc: 'Consulenze mirate per comprendere al meglio i comportamenti.' }
+                    { name: 'Supporto ai Proprietari', desc: 'Consulenze mirate per comprendere al meglio i comportamenti.' },
+                    { name: 'Asilo', desc: 'Operatore presso asilo.' },
                   ].map((comp, idx) => (
                     <div key={idx} style={{ padding: '8px 12px', background: 'white', borderRadius: '8px', borderLeft: '3px solid #0284c7' }}>
                       <h5 style={{ fontWeight: 700, fontSize: '0.85rem', color: '#042f2e' }}>{comp.name}</h5>
@@ -996,120 +1001,187 @@ export default function App() {
             </p>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '30px'
-          }}>
-            {/* Servizio 1: Passeggiata */}
-            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '16px' }}>🦮</span>
-                <h4 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#042f2e' }}>Passeggiata Cinofila</h4>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 16px 0' }}>
-                  Uscite dedicate al benessere olfattivo, alla socializzazione controllata e all'esplorazione ambientale del cane.
-                </p>
-                <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <p>⏱️ Durata: <strong>30 o 60 minuti</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€20 (30m) / €35 (60m)</strong></p>
-                </div>
-              </div>
-              <button onClick={() => handleServiceSelect('Passeggiata Cinofila (30m)')} className="btn btn-primary" style={{ width: '100%' }}>
-                Prenota Ora
-              </button>
+          {/* ---- CATEGORIA 1: Presso la casa del Sitter ---- */}
+          <div style={{ marginBottom: '40px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <span style={{ fontSize: '1.6rem' }}>🏡</span>
+              <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#042f2e' }}>Presso la casa del Sitter</h3>
             </div>
-
-            {/* Servizio 2: Dog Sitting Diurno */}
-            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '16px' }}>🏡</span>
-                <h4 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#042f2e' }}>Dog Sitting Diurno</h4>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 16px 0' }}>
-                  Custodia attenta del cane presso l'abitazione del proprietario. Garantiamo coccole, pasti e passeggiate.
-                </p>
-                <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <p>⏱️ Durata: <strong>Giornata Intera</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€35 al giorno</strong></p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+              {/* Dog Sitting Diurno */}
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>☀️ Dog Sitting Diurno</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Il tuo cane passa la giornata a casa mia, in un ambiente sicuro e accogliente. Perfetto per non lasciarlo solo mentre sei al lavoro.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ Durata: <strong>Mezza Giornata</strong></p>
+                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€25</strong></p>
+                  </div>
                 </div>
+                <button onClick={() => handleServiceSelect('Dog Sitting Diurno (Sitter)')} className="btn btn-primary" style={{ width: '100%' }}>
+                  Prenota Ora
+                </button>
               </div>
-              <button onClick={() => handleServiceSelect('Dog Sitting Diurno')} className="btn btn-primary" style={{ width: '100%' }}>
-                Prenota Ora
-              </button>
-            </div>
-
-            {/* Servizio 3: Dog Sitting Notturno */}
-            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '16px' }}>🌙</span>
-                <h4 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#042f2e' }}>Dog Sitting Notturno</h4>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 16px 0' }}>
-                  Pernottamento e custodia a domicilio del cane durante le tue vacanze o assenze notturne. Zero stress per lui.
-                </p>
-                <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <p>⏱️ Durata: <strong>A notte</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€45 a notte</strong></p>
+              {/* Dog Sitting Pensione */}
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🌙 Dog Sitting Pensione</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Un vero e proprio soggiorno con pernottamento. Il tuo cane farà parte della famiglia per tutta la notte, circondato da comfort, affetto e attenzioni.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ Durata: <strong>24 ore (con pernottamento incluso)</strong></p>
+                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€35</strong></p>
+                  </div>
                 </div>
+                <button onClick={() => handleServiceSelect('Dog Sitting Pensione (Sitter)')} className="btn btn-primary" style={{ width: '100%' }}>
+                  Prenota Ora
+                </button>
               </div>
-              <button onClick={() => handleServiceSelect('Dog Sitting Notturno')} className="btn btn-primary" style={{ width: '100%' }}>
-                Prenota Ora
-              </button>
             </div>
-
-            {/* Servizio 4: Navetta */}
-            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '16px' }}>🚗</span>
-                <h4 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#042f2e' }}>Servizio Navetta</h4>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 16px 0' }}>
-                  Trasporto professionale ed in sicurezza del cane presso veterinario, toelettatura o centri specializzati.
-                </p>
-                <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <p>⏱️ Destinazione: <strong>Veterinario / Toeletta / Centro</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>Da €15</strong></p>
-                </div>
-              </div>
-              <button onClick={() => handleServiceSelect('Servizio Navetta')} className="btn btn-primary" style={{ width: '100%' }}>
-                Prenota Ora
-              </button>
-            </div>
-
-            {/* Servizio 5: Educazione Base */}
-            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '16px' }}>🎓</span>
-                <h4 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#042f2e' }}>Educazione Base</h4>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 16px 0' }}>
-                  Sessioni di educazione per migliorare l'intesa cane-conduttore, i comandi di base, il richiamo ed autocontrollo.
-                </p>
-                <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <p>⏱️ Durata: <strong>60 minuti a sessione</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€30 a sessione</strong></p>
-                </div>
-              </div>
-              <button onClick={() => handleServiceSelect('Educazione Base')} className="btn btn-primary" style={{ width: '100%' }}>
-                Prenota Ora
-              </button>
-            </div>
-
-            {/* Servizio 6: Consulenza Pre-Adozione */}
-            <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '16px' }}>📋</span>
-                <h4 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#042f2e' }}>Consulenza Pre-Adozione</h4>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 16px 0' }}>
-                  Ti guidiamo nella scelta della razza o del cane ideale in canile in base al tuo stile di vita e spazi disponibili.
-                </p>
-                <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <p>⏱️ Durata: <strong>45 minuti a sessione</strong></p>
-                  <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€25 a sessione</strong></p>
-                </div>
-              </div>
-              <button onClick={() => handleServiceSelect('Consulenza Pre-Adozione')} className="btn btn-primary" style={{ width: '100%' }}>
-                Prenota Ora
-              </button>
-            </div>
-
           </div>
+
+          {/* ---- CATEGORIA 2: Presso l'abitazione del Cliente ---- */}
+          <div style={{ marginBottom: '40px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <span style={{ fontSize: '1.6rem' }}>🦮</span>
+              <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#042f2e' }}>Presso l'abitazione del Cliente</h3>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+              {/* Dog Sitting Diurno */}
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🏠 Dog Sitting Diurno</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Vengo io da te per accudire il tuo cane direttamente nel suo ambiente domestico durante il giorno. Meno stress per lui, massima comodità per te.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ Durata: <strong>Mezza Giornata / Giornata intera</strong></p>
+                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€20 / €40</strong></p>
+                  </div>
+                </div>
+                <button onClick={() => handleServiceSelect('Dog Sitting Diurno (Domicilio)')} className="btn btn-primary" style={{ width: '100%' }}>
+                  Prenota Ora
+                </button>
+              </div>
+              {/* Dog Sitting a domicilio Pensione */}
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🛌 Dog Sitting Pensione</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Servizio di "house-sitting". Resto a dormire a casa tua per garantire al cane la continuità delle sue abitudini e una presenza costante anche di notte.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ Durata: <strong>24 ore (con pernottamento incluso)</strong></p>
+                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€50</strong></p>
+                  </div>
+                </div>
+                <button onClick={() => handleServiceSelect('Dog Sitting Pensione')} className="btn btn-primary" style={{ width: '100%' }}>
+                  Prenota Ora
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ---- CATEGORIA 3: In Giro per la Città ---- */}
+          <div style={{ marginBottom: '40px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <span style={{ fontSize: '1.6rem' }}>🌳</span>
+              <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#042f2e' }}>In Giro per la Città</h3>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🦮 Dog Walking (Passeggiata Cani)</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Un'uscita dedicata al movimento, al gioco e ai bisognini del tuo cane, per spezzare la sua giornata in totale sicurezza.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ 30 minuti &nbsp; | &nbsp; 💰 <strong>€20</strong></p>
+                    <p style={{ marginTop: '6px' }}>⏱️ 60 minuti &nbsp; | &nbsp; 💰 <strong>€35</strong></p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => handleServiceSelect('Dog Walking (30m)')} className="btn btn-primary" style={{ flex: 1, fontSize: '0.85rem' }}>
+                    30 min
+                  </button>
+                  <button onClick={() => handleServiceSelect('Dog Walking (60m)')} className="btn btn-secondary" style={{ flex: 1, fontSize: '0.85rem' }}>
+                    60 min
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ---- CATEGORIA 4+: Navetta, Educazione, Consulenza ---- */}
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+              {/* Navetta */}
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>🚌</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Servizio Navetta</span>
+                  </div>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🚗 Trasporto Professionale</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Trasporto professionale ed in sicurezza del cane presso veterinario, toelettatura o centri specializzati.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ Destinazione: <strong>Veterinario / Toeletta / Centro</strong></p>
+                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>Da €15</strong></p>
+                  </div>
+                </div>
+                <button onClick={() => handleServiceSelect('Servizio Navetta')} className="btn btn-primary" style={{ width: '100%' }}>
+                  Prenota Ora
+                </button>
+              </div>
+              {/* Educazione Base */}
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>🎓</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Educazione</span>
+                  </div>
+                  <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}></span>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🦮Educazione Base</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Sessioni di educazione per migliorare l'intesa cane-conduttore, i comandi di base, il richiamo ed autocontrollo.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ Durata: <strong>60 minuti a sessione</strong></p>
+                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€30 a sessione</strong></p>
+                  </div>
+                </div>
+                <button onClick={() => handleServiceSelect('Educazione Base')} className="btn btn-primary" style={{ width: '100%' }}>
+                  Prenota Ora
+                </button>
+              </div>
+              {/* Consulenza Pre-Adozione */}
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '1.4rem' }}>📋</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Consulenza</span>
+                  </div>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🐾 Consulenza Pre-Adozione</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Ti guidiamo nella scelta della razza o del cane ideale in canile in base al tuo stile di vita e spazi disponibili.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ Durata: <strong>45 minuti a sessione</strong></p>
+                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€25 a sessione</strong></p>
+                  </div>
+                </div>
+                <button onClick={() => handleServiceSelect('Consulenza Pre-Adozione')} className="btn btn-primary" style={{ width: '100%' }}>
+                  Prenota Ora
+                </button>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -1176,15 +1248,13 @@ export default function App() {
                   paddingTop: '12px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="calendar-cell-status status-available" style={{ width: '10px', height: '10px' }} />
+                    
                     <span>🟢 Disponibile</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="calendar-cell-status status-pending" style={{ width: '10px', height: '10px' }} />
                     <span>🟡 In Attesa</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="calendar-cell-status status-occupied" style={{ width: '10px', height: '10px' }} />
                     <span>🔴 Occupato</span>
                   </div>
                 </div>
@@ -1294,13 +1364,23 @@ export default function App() {
                       onChange={(e) => setBookingForm({ ...bookingForm, service: e.target.value })}
                       className="form-input"
                     >
-                      <option value="Passeggiata Cinofila (30m)">Passeggiata Cinofila (30m)</option>
-                      <option value="Passeggiata Cinofila (60m)">Passeggiata Cinofila (60m)</option>
-                      <option value="Dog Sitting Diurno">Dog Sitting Diurno</option>
-                      <option value="Dog Sitting Notturno">Dog Sitting Notturno</option>
-                      <option value="Servizio Navetta">Servizio Navetta</option>
-                      <option value="Educazione Base">Educazione Base</option>
-                      <option value="Consulenza Pre-Adozione">Consulenza Pre-Adozione</option>
+                      <optgroup label="🏡 Presso la casa del Sitter">
+                        <option value="Dog Sitting Diurno (Sitter)">☀️ Dog Sitting Diurno — €25</option>
+                        <option value="Dog Sitting Pensione (Sitter)">🌙 Dog Sitting Pensione — €35</option>
+                      </optgroup>
+                      <optgroup label="🦮 Presso l'abitazione del Cliente">
+                        <option value="Dog Sitting Diurno (Domicilio)">🏠 Dog Sitting Diurno — €20/€40</option>
+                        <option value="Dog Sitting Pensione">🛌 Dog Sitting Pensione — €50</option>
+                      </optgroup>
+                      <optgroup label="🌳 In Giro per la Città">
+                        <option value="Dog Walking (30m)">🦮 Dog Walking 30min — €20</option>
+                        <option value="Dog Walking (60m)">🦮 Dog Walking 60min — €35</option>
+                      </optgroup>
+                      <optgroup label="🚌 Navetta & Formazione">
+                        <option value="Servizio Navetta">🚗 Servizio Navetta — Da €15</option>
+                        <option value="Educazione Base">🎓 Educazione Base — €30</option>
+                        <option value="Consulenza Pre-Adozione">📋 Consulenza Pre-Adozione — €25</option>
+                      </optgroup>
                     </select>
                   </div>
                   <div>
@@ -1394,7 +1474,7 @@ export default function App() {
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '24px' }}>
                   <input
-                    type="checkbox"
+                    type="checkbox"Area Copertura Servizi
                     id="gdpr"
                     checked={bookingForm.gdpr}
                     onChange={(e) => setBookingForm({ ...bookingForm, gdpr: e.target.checked })}
@@ -1932,7 +2012,7 @@ export default function App() {
             <div>
               <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Note Legali</h5>
               <p style={{ fontSize: '0.75rem', color: '#5eead4', lineHeight: 1.5 }}>
-                WebDog di Emanuele Vanni P.IVA 01234567890 • Tutti i diritti riservati • Assicurazione Professionale Allianz RC n. 981245.
+                WebDog di Emanuele Barese P.IVA 01234567890 • Tutti i diritti riservati • Assicurazione Professionale Allianz RC n. 981245.
               </p>
             </div>
           </div>
