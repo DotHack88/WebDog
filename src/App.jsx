@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dog, Activity, Calendar, DollarSign, Phone, Shield, Heart, Award,
   FileText, Check, ChevronLeft, ChevronRight, Star, MapPin, Mail,
-  Send, MessageSquare, Menu, X, Sliders, Eye, Sparkles
+  Send, MessageSquare, Menu, X, Sliders, Eye, Sparkles, Copy
 } from 'lucide-react';
 import AdminPortal from './components/AdminPortal';
 import NotificationToast from './components/NotificationToast';
@@ -95,7 +95,9 @@ const galleryImages = [
   { id: 4, src: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=600', category: 'Eventi', title: 'Puppy Class di Gruppo', desc: 'Socializzazione precoce per cuccioli dai 3 ai 6 mesi.' },
   { id: 5, src: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&q=80&w=600', category: 'Passeggiate', title: 'Gruppo di Passeggiata al Parco', desc: 'Attività stimolante in branco guidato.' },
   { id: 6, src: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=600', category: 'Dog Sitting', title: 'Coccole a domicilio', desc: 'Assistenza affettuosa e personalizzata.' },
-  { id: 7, src: '/albums/IMG_20260322_121538.jpg', category: 'Gare Cinofile', title: 'Gara di Agility Dog', desc: 'Freya & Na\'vi.' }
+  { id: 7, src: '/albums/IMG_20260322_121538.jpg', category: 'I Miei Sport', title: 'Gara di Rally-O', desc: 'Freya & Na\'vi.' },
+  { id: 8, src: '/albums/IMG-20260413-WA0017.jpg', category: 'I Miei Sport', title: 'Gara di Agility', desc: 'Esordio.' },
+  { id: 9, src: '/albums/IMG_20260509_121459.jpg', category: 'I Miei Sport', title: 'Gara di Agility', desc: 'Freya 🥈 2° Posto e 🥉 3° Posto in combinata.' }, 
 ];
 
 export default function App() {
@@ -139,6 +141,42 @@ export default function App() {
     gdpr: false,
     paymentMethod: 'contanti', // 'contanti', 'paypal', 'revolut', 'iban'
   });
+
+  // Contact Form State
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+
+  // Email/Message Modal state
+  const [emailModalData, setEmailModalData] = useState(null);
+
+  // Notification Logs State
+  const [notificationLogs, setNotificationLogs] = useState(() => {
+    const saved = localStorage.getItem('webdog_notification_logs');
+    return saved ? JSON.parse(saved) : [
+      { title: 'Conferma Prenotazione Inviata', details: 'A: marco.rossi@gmail.com - Servizio: Dog Sitting - Stato: Successo', time: '5 minuti fa', chan: 'Email' },
+      { title: 'Nuovo Messaggio Contatto', details: 'A: info@webdog.it - Da: alessandro.n@example.com - Stato: Successo', time: '12 minuti fa', chan: 'Email' },
+      { title: 'Modifica Appuntamento Spedito', details: 'A: giulia.b@domain.com - Data: 12/06 - Stato: Letto', time: '1 ora fa', chan: 'Email' },
+      { title: 'Promemoria Appuntamento (24h pre)', details: 'A: lorenzo.v@test.it - Stato: Eseguito', time: 'Ieri, 18:30', chan: 'Telegram Bot' }
+    ];
+  });
+
+  const addNotificationLog = (title, details, chan = 'Email') => {
+    const newLog = {
+      title,
+      details,
+      time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + ' (Oggi)',
+      chan
+    };
+    setNotificationLogs((prev) => {
+      const updated = [newLog, ...prev.slice(0, 19)];
+      localStorage.setItem('webdog_notification_logs', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   // Client Review Form State
   const [reviewForm, setReviewForm] = useState({
@@ -221,7 +259,152 @@ export default function App() {
 
     setBookings((prev) => [newBooking, ...prev]);
 
-    const messageBody = `Nuova Prenotazione WebDog!
+    // Define the email modal parameters
+    const emailData = {
+      type: 'booking',
+      toEmail: bookingForm.email,
+      toName: `${bookingForm.firstName} ${bookingForm.lastName}`,
+      subject: `Conferma Prenotazione WebDog - ${bookingForm.service}`,
+      clientEmail: bookingForm.email,
+      bodyText: `Gentile ${bookingForm.firstName} ${bookingForm.lastName},
+
+Grazie per aver effettuato una prenotazione con WebDog! Di seguito trovi i dettagli della tua richiesta di appuntamento in attesa di approvazione:
+
+🐾 DETTAGLI CLIENTE:
+Nome: ${bookingForm.firstName} ${bookingForm.lastName}
+Telefono: ${bookingForm.phone}
+Email: ${bookingForm.email}
+
+🐶 DETTAGLI CANE:
+Nome Cane: ${bookingForm.dogName}
+Razza: ${bookingForm.dogBreed}
+Età: ${bookingForm.dogAge}
+
+📅 DETTAGLI APPUNTAMENTO:
+Servizio: ${bookingForm.service}
+Data: ${new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+Orario: ${bookingForm.time}
+Pagamento selezionato: ${bookingForm.paymentMethod.toUpperCase()}
+Note speciali: ${bookingForm.notes || 'Nessuna'}
+
+Ti ricontatteremo a breve per confermare la disponibilità definitiva dello slot temporale.
+
+Cordiali saluti,
+Staff WebDog
+Napoli e Provincia
+info@webdog.it`,
+      bodyHtml: `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f0fdf4;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+        <!-- HEADER -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#0f766e 0%,#14b8a6 60%,#2dd4bf 100%);padding:36px 32px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:8px;">🐾</div>
+            <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:-0.5px;">WebDog</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:500;">Educazione · Benessere · Cura del Tuo Cane</p>
+            <div style="margin-top:16px;display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 18px;">
+              <span style="color:#ffffff;font-size:13px;font-weight:700;">📋 CONFERMA PRENOTAZIONE</span>
+            </div>
+          </td>
+        </tr>
+
+        <!-- GREETING -->
+        <tr>
+          <td style="padding:32px 32px 0;">
+            <h2 style="margin:0 0 8px;color:#0f2d2a;font-size:22px;font-weight:700;">Ciao ${bookingForm.firstName}! 👋</h2>
+            <p style="margin:0;color:#475569;font-size:15px;line-height:1.6;">
+              La tua richiesta di appuntamento con <strong style="color:#0f766e;">WebDog</strong> è stata ricevuta con successo.<br/>
+              Sei in ottima compagnia — sia tu che <strong>${bookingForm.dogName}</strong>! 🐶
+            </p>
+          </td>
+        </tr>
+
+        <!-- STATUS BADGE -->
+        <tr>
+          <td style="padding:20px 32px 0;">
+            <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:10px;">
+              <span style="font-size:20px;">⏳</span>
+              <div>
+                <strong style="color:#92400e;font-size:14px;">STATO: IN ATTESA DI CONFERMA</strong>
+                <p style="margin:2px 0 0;color:#78350f;font-size:13px;">Ti contatteremo entro 24h per confermare la disponibilità.</p>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- SECTION: CLIENTE -->
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <div style="background:#f8fafc;border-radius:12px;padding:20px;border-left:4px solid #0f766e;">
+              <h3 style="margin:0 0 14px;color:#0f766e;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">🐾 Dettagli Cliente</h3>
+              <table width="100%" cellpadding="4" cellspacing="0">
+                <tr><td style="color:#64748b;font-size:13px;width:120px;">Nome completo</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.firstName} ${bookingForm.lastName}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Telefono</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.phone}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Email</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.email}</td></tr>
+              </table>
+            </div>
+          </td>
+        </tr>
+
+        <!-- SECTION: CANE -->
+        <tr>
+          <td style="padding:16px 32px 0;">
+            <div style="background:#f0fdf4;border-radius:12px;padding:20px;border-left:4px solid #22c55e;">
+              <h3 style="margin:0 0 14px;color:#15803d;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">🐶 Il Tuo Amico a 4 Zampe</h3>
+              <table width="100%" cellpadding="4" cellspacing="0">
+                <tr><td style="color:#64748b;font-size:13px;width:120px;">Nome</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.dogName}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Razza</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.dogBreed}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Età</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.dogAge}</td></tr>
+              </table>
+            </div>
+          </td>
+        </tr>
+
+        <!-- SECTION: APPUNTAMENTO -->
+        <tr>
+          <td style="padding:16px 32px 0;">
+            <div style="background:#eff6ff;border-radius:12px;padding:20px;border-left:4px solid #3b82f6;">
+              <h3 style="margin:0 0 14px;color:#1d4ed8;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">📅 Dettagli Appuntamento</h3>
+              <table width="100%" cellpadding="4" cellspacing="0">
+                <tr><td style="color:#64748b;font-size:13px;width:120px;">Servizio</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${bookingForm.service}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Data</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${new Date(bookingForm.date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Orario</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${bookingForm.time}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Pagamento</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.paymentMethod.toUpperCase()}</td></tr>
+                ${bookingForm.notes ? `<tr><td style="color:#64748b;font-size:13px;">Note</td><td style="color:#0f2d2a;font-size:14px;font-style:italic;">${bookingForm.notes}</td></tr>` : ''}
+              </table>
+            </div>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td style="padding:28px 32px 0;text-align:center;">
+            <p style="margin:0 0 12px;color:#475569;font-size:14px;">Hai domande? Contattaci direttamente!</p>
+            <a href="https://wa.me/393467251989" style="display:inline-block;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;margin-right:8px;">💬 WhatsApp</a>
+            <a href="mailto:info@webdog.it" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;">📧 Email</a>
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="padding:32px;text-align:center;border-top:1px solid #e2e8f0;margin-top:24px;">
+            <p style="margin:0 0 4px;font-size:20px;">🐕</p>
+            <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 WebDog · Napoli e Provincia · info@webdog.it</p>
+            <p style="margin:4px 0 0;color:#cbd5e1;font-size:11px;">Questa email è stata inviata automaticamente a seguito della tua prenotazione.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+      whatsappText: `Nuova Prenotazione WebDog!
 Cliente: ${bookingForm.firstName} ${bookingForm.lastName}
 Telefono: ${bookingForm.phone}
 Email: ${bookingForm.email}
@@ -229,23 +412,17 @@ Cane: ${bookingForm.dogName} (${bookingForm.dogBreed}, ${bookingForm.dogAge})
 Servizio: ${bookingForm.service}
 Data: ${bookingForm.date} alle ${bookingForm.time}
 Pagamento: ${bookingForm.paymentMethod}
-Note: ${bookingForm.notes || 'Nessuna nota'}
-`;
+Note: ${bookingForm.notes || 'Nessuna nota'}`
+    };
 
-    // Apri l'app mail del cliente con CC a se stesso
-    window.location.href = `mailto:info@webdog.it?cc=${encodeURIComponent(bookingForm.email)}&subject=${encodeURIComponent('Conferma Prenotazione WebDog')}&body=${encodeURIComponent(messageBody)}`;
+    setEmailModalData(emailData);
 
-    // Apri in parallelo chat WhatsApp per inviare il messaggio
-    setTimeout(() => {
-      window.open(`https://wa.me/393467251989?text=${encodeURIComponent(messageBody)}`, '_blank');
-    }, 500);
-
-    // Send mock client alerts
+    // Send toast client alerts
     triggerToast(
-      'Prenotazione Inviata',
-      `Grazie ${bookingForm.firstName}! Appuntamento registrato. La tua app email/WhatsApp si aprirà per inviarci i dati confermati.`,
+      'Prenotazione Registrata',
+      `Grazie ${bookingForm.firstName}! Appuntamento registrato. Gestisci l'invio della mail di riepilogo.`,
       'success',
-      'Email e SMS'
+      'System'
     );
 
     // Send mock operator notification
@@ -351,8 +528,144 @@ Note: ${bookingForm.notes || 'Nessuna nota'}
   // Quick message contact submit
   const handleContactSubmit = (e) => {
     e.preventDefault();
-    triggerToast('Messaggio Spedito', 'Grazie per averci contattato. Ti risponderemo su WhatsApp o via Email entro poche ore.', 'success', 'WhatsApp / Email');
-    e.target.reset();
+    
+    // Define the email modal parameters
+    const emailData = {
+      type: 'contact',
+      toEmail: contactForm.email,
+      toName: contactForm.name,
+      subject: `Richiesta Informazioni WebDog - ${contactForm.name}`,
+      clientEmail: contactForm.email,
+      bodyText: `Gentile ${contactForm.name},
+
+Grazie per averci contattato tramite il Modulo Messaggi di WebDog. Abbiamo ricevuto la tua richiesta e un nostro operatore ti risponderà il prima possibile.
+
+Di seguito un riepilogo del tuo messaggio:
+
+👤 NOME & COGNOME:
+${contactForm.name}
+
+📧 INDIRIZZO EMAIL:
+${contactForm.email}
+
+📞 TELEFONO CELLULARE:
+${contactForm.phone}
+
+💬 IL TUO MESSAGGIO:
+"${contactForm.message}"
+
+Ti risponderemo via email o sul numero di cellulare fornito entro poche ore.
+
+Cordiali saluti,
+Staff WebDog
+Napoli e Provincia
+info@webdog.it`,
+      bodyHtml: `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f0fdf4;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+        <!-- HEADER -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#0f766e 0%,#14b8a6 60%,#2dd4bf 100%);padding:36px 32px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:8px;">🐾</div>
+            <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:-0.5px;">WebDog</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:500;">Educazione · Benessere · Cura del Tuo Cane</p>
+            <div style="margin-top:16px;display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 18px;">
+              <span style="color:#ffffff;font-size:13px;font-weight:700;">✉️ MESSAGGIO RICEVUTO</span>
+            </div>
+          </td>
+        </tr>
+
+        <!-- GREETING -->
+        <tr>
+          <td style="padding:32px 32px 0;">
+            <h2 style="margin:0 0 8px;color:#0f2d2a;font-size:22px;font-weight:700;">Ciao ${contactForm.name}! 👋</h2>
+            <p style="margin:0;color:#475569;font-size:15px;line-height:1.6;">
+              Grazie per averci scritto! Il tuo messaggio è stato ricevuto e il nostro team lo leggerà con tutta l'attenzione che merita. 🐕
+            </p>
+          </td>
+        </tr>
+
+        <!-- MESSAGE BOX -->
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <div style="background:#f8fafc;border-radius:12px;padding:20px;border-left:4px solid #0f766e;">
+              <h3 style="margin:0 0 12px;color:#0f766e;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">💬 Il tuo messaggio</h3>
+              <p style="margin:0;color:#334155;font-size:15px;line-height:1.7;font-style:italic;">"${contactForm.message}"</p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- CONTACT DETAILS -->
+        <tr>
+          <td style="padding:16px 32px 0;">
+            <div style="background:#eff6ff;border-radius:12px;padding:20px;border-left:4px solid #3b82f6;">
+              <h3 style="margin:0 0 14px;color:#1d4ed8;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">👤 I Tuoi Contatti</h3>
+              <table width="100%" cellpadding="4" cellspacing="0">
+                <tr><td style="color:#64748b;font-size:13px;width:120px;">Nome</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${contactForm.name}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Email</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${contactForm.email}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Telefono</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${contactForm.phone}</td></tr>
+              </table>
+            </div>
+          </td>
+        </tr>
+
+        <!-- RESPONSE TIME -->
+        <tr>
+          <td style="padding:20px 32px 0;">
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 18px;text-align:center;">
+              <span style="font-size:18px;">⚡</span>
+              <strong style="color:#15803d;font-size:14px;display:block;margin:4px 0;">Ti rispondiamo entro poche ore</strong>
+              <p style="margin:0;color:#4ade80;font-size:13px;">via Email o al numero di telefono fornito</p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td style="padding:28px 32px 0;text-align:center;">
+            <p style="margin:0 0 12px;color:#475569;font-size:14px;">Non vedi l'ora? Scrivici direttamente!</p>
+            <a href="https://wa.me/393467251989" style="display:inline-block;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;margin-right:8px;">💬 WhatsApp</a>
+            <a href="mailto:info@webdog.it" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;">📧 Email</a>
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="padding:32px;text-align:center;border-top:1px solid #e2e8f0;margin-top:24px;">
+            <p style="margin:0 0 4px;font-size:20px;">🐕</p>
+            <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 WebDog · Napoli e Provincia · info@webdog.it</p>
+            <p style="margin:4px 0 0;color:#cbd5e1;font-size:11px;">Questa email è stata generata automaticamente dal modulo messaggi del sito.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+      whatsappText: `Nuovo Messaggio da WebDog!
+Nome: ${contactForm.name}
+Telefono: ${contactForm.phone}
+Email: ${contactForm.email}
+Messaggio: ${contactForm.message}`
+    };
+
+    setEmailModalData(emailData);
+
+    triggerToast('Messaggio Registrato', 'Il tuo messaggio è stato registrato. Gestisci l\'invio della mail di riepilogo.', 'success', 'System');
+    
+    // Reset Contact Form
+    setContactForm({
+      name: '',
+      email: '',
+      phone: '',
+      message: ''
+    });
   };
 
   // Admin database controls
@@ -505,6 +818,8 @@ Note: ${bookingForm.notes || 'Nessuna nota'}
           deleteBooking={deleteBooking}
           reviews={reviews}
           triggerToast={triggerToast}
+          notificationLogs={notificationLogs}
+          setNotificationLogs={setNotificationLogs}
           onClose={() => setViewMode('client')}
         />
         <NotificationToast toasts={toasts} removeToast={removeToast} />
@@ -1763,7 +2078,7 @@ Note: ${bookingForm.notes || 'Nessuna nota'}
             marginBottom: '32px',
             flexWrap: 'wrap'
           }}>
-            {['Tutti', 'Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'Gare Cinofile', ].map((cat) => (
+            {['Tutti', 'Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport', ].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveGalleryFilter(cat)}
@@ -2004,22 +2319,51 @@ Note: ${bookingForm.notes || 'Nessuna nota'}
 
                 <div style={{ marginBottom: '16px' }}>
                   <label className="form-label">NOME & COGNOME</label>
-                  <input type="text" placeholder="Alessandro Neri" required className="form-input" />
+                  <input 
+                    type="text" 
+                    placeholder="Alessandro Neri" 
+                    required 
+                    className="form-input" 
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                  />
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
                   <label className="form-label">E-MAIL</label>
-                  <input type="email" placeholder="alessandro.n@example.com" required className="form-input" />
+                  <input 
+                    type="email" 
+                    placeholder="alessandro.n@example.com" 
+                    required 
+                    className="form-input" 
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                  />
                 </div>
 
                 <div style={{ marginBottom: '16px' }}>
                   <label className="form-label">TELEFONO CELLULARE</label>
-                  <input type="tel" placeholder="3334567890" required className="form-input" />
+                  <input 
+                    type="tel" 
+                    placeholder="3334567890" 
+                    required 
+                    className="form-input" 
+                    value={contactForm.phone}
+                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                  />
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
                   <label className="form-label">IL TUO MESSAGGIO</label>
-                  <textarea placeholder="Scrivi qui la tua richiesta o perplessità cinofila..." required rows="4" className="form-input" style={{ resize: 'none' }} />
+                  <textarea 
+                    placeholder="Scrivi qui la tua richiesta o perplessità cinofila..." 
+                    required 
+                    rows="4" 
+                    className="form-input" 
+                    style={{ resize: 'none' }} 
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                  />
                 </div>
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', gap: '10px' }}>
@@ -2096,8 +2440,305 @@ Note: ${bookingForm.notes || 'Nessuna nota'}
         <Eye size={16} /> <span>Operatore Dashboard</span>
       </button>
 
+      {/* EMAIL / MESSAGE SUBMISSION MODAL */}
+      {emailModalData !== null && (
+        <EmailModal
+          data={emailModalData}
+          onClose={() => setEmailModalData(null)}
+          triggerToast={triggerToast}
+          addNotificationLog={addNotificationLog}
+        />
+      )}
+
       {/* REAL-TIME NOTIFICATION MANAGER STACK */}
       <NotificationToast toasts={toasts} removeToast={removeToast} />
+    </div>
+  );
+}
+
+// Subcomponent: Email / Message sending module dialog
+function EmailModal({ data, onClose, triggerToast, addNotificationLog }) {
+  const [sendingStatus, setSendingStatus] = useState('idle'); // 'idle', 'sending', 'success', 'error'
+  const [errorMessage, setErrorMessage] = useState('');
+  // Guard against React StrictMode double-invocation of useEffect
+  const hasSentRef = React.useRef(false);
+
+  const config = useMemo(() => {
+    const saved = localStorage.getItem('webdog_email_config');
+    return saved ? JSON.parse(saved) : {
+      method: 'emailjs',
+      emailjsServiceId: 'service_77dn8u2',
+      emailjsTemplateId: 'template_k3sc8sn',
+      emailjsPublicKey: '6n8JEdiKSucjPCKmR',
+      adminEmail: 'emanuelebarese@gmail.com'
+    };
+  }, []);
+
+  const handleSendEmailJS = async () => {
+    setSendingStatus('sending');
+    try {
+      if (!config.emailjsServiceId || !config.emailjsTemplateId || !config.emailjsPublicKey) {
+        throw new Error("Chiavi EmailJS non configurate. Configurale nell'Area Admin o usa il Client di posta locale.");
+      }
+
+      // Send ONE single email to admin with all client details inside
+      const adminEmail = config.adminEmail || 'emanuelebarese@gmail.com';
+      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: config.emailjsServiceId,
+          template_id: config.emailjsTemplateId,
+          user_id: config.emailjsPublicKey,
+          template_params: {
+            to_name: 'Admin WebDog',
+            to_email: adminEmail,
+            reply_to: data.clientEmail || data.toEmail,
+            subject: data.subject,
+            message: data.bodyText,
+            message_html: data.bodyHtml
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Errore HTTP ${response.status}`);
+      }
+
+      setSendingStatus('success');
+      triggerToast('Email Inviata', `Notifica inviata con successo a ${adminEmail}!`, 'success', 'EmailJS API');
+      addNotificationLog(data.subject, `A: ${adminEmail} (da: ${data.toEmail}) - Metodo: EmailJS - Stato: Successo`, 'Email');
+    } catch (err) {
+      setSendingStatus('error');
+      setErrorMessage(err.message);
+      triggerToast('Errore Invio', err.message, 'error', 'EmailJS API');
+    }
+  };
+
+  // Auto trigger — useRef guard prevents double-fire from React StrictMode
+  useEffect(() => {
+    if (hasSentRef.current) return;
+    hasSentRef.current = true;
+
+    if (config.method === 'emailjs' && config.emailjsServiceId && config.emailjsTemplateId && config.emailjsPublicKey) {
+      handleSendEmailJS();
+    } else if (config.method === 'simulated') {
+      const timer = setTimeout(() => {
+        setSendingStatus('success');
+        addNotificationLog(data.subject, `A: ${data.toEmail} - Metodo: Simulatore - Stato: Successo`, 'Email');
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const triggerMailto = () => {
+    const adminEmail = config.adminEmail || 'info@webdog.it';
+    // Send to admin with client in CC
+    const mailtoUrl = `mailto:${adminEmail}?cc=${encodeURIComponent(data.toEmail)}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(data.bodyText)}`;
+    window.location.href = mailtoUrl;
+    addNotificationLog(data.subject, `A: ${adminEmail} (CC: ${data.toEmail}) - Metodo: Mailto`, 'Email');
+  };
+
+  const triggerWhatsApp = () => {
+    const waText = encodeURIComponent(data.whatsappText || data.bodyText);
+    window.open(`https://wa.me/393467251989?text=${waText}`, '_blank');
+    addNotificationLog(`WhatsApp: ${data.subject}`, `A: Gestore - Stato: Aperto`, 'WhatsApp');
+  };
+
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(data.bodyText);
+    triggerToast('Copiato', 'Testo dell\'email copiato negli appunti.', 'info', 'System');
+  };
+
+  return (
+    <div className="lightbox" style={{ zIndex: 9999 }}>
+      <div className="glass-panel" style={{
+        width: '95%',
+        maxWidth: '600px',
+        padding: '30px',
+        background: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: '16px',
+        border: '1px solid rgba(255, 255, 255, 0.5)',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+        animation: 'fadeIn 0.3s ease-out',
+        position: 'relative'
+      }}>
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#64748b'
+          }}
+        >
+          <X size={24} />
+        </button>
+
+        {/* Modal Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <div style={{
+            background: '#ccfbf1',
+            color: '#0f766e',
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Mail size={22} style={{ color: '#0f766e' }} />
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0f2d2a', margin: 0 }}>
+              {data.type === 'booking' ? 'Invio Dettagli Appuntamento' : 'Invio Messaggio Contatto'}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
+              Gestisci l'invio delle informazioni al cliente e all'operatore.
+            </p>
+          </div>
+        </div>
+
+        {/* Status Alert Banner */}
+        <div style={{
+          background: sendingStatus === 'sending' ? '#f0f9ff' :
+                      sendingStatus === 'success' ? '#ecfdf5' :
+                      sendingStatus === 'error' ? '#fef2f2' : '#f8fafc',
+          border: `1px solid ${
+            sendingStatus === 'sending' ? '#bae6fd' :
+            sendingStatus === 'success' ? '#a7f3d0' :
+            sendingStatus === 'error' ? '#fecaca' : '#e2e8f0'
+          }`,
+          color: sendingStatus === 'sending' ? '#0369a1' :
+                 sendingStatus === 'success' ? '#047857' :
+                 sendingStatus === 'error' ? '#b91c1c' : '#475569',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          textAlign: 'left'
+        }}>
+          <span>
+            {sendingStatus === 'sending' && '⏳ Invio automatico tramite EmailJS in corso...'}
+            {sendingStatus === 'success' && (
+              config.method === 'emailjs' 
+                ? '🟢 Email inviata automaticamente al cliente con successo!' 
+                : config.method === 'simulated'
+                ? '💻 Invio simulato completato (dettagli salvati nel log admin).'
+                : '📬 Pronto per l\'invio manuale tramite la tua applicazione email.'
+            )}
+            {sendingStatus === 'error' && `❌ Errore EmailJS: ${errorMessage}`}
+            {sendingStatus === 'idle' && '📬 Scegli una delle opzioni sottostanti per inviare.'}
+          </span>
+          {sendingStatus === 'error' && (
+            <button 
+              onClick={handleSendEmailJS}
+              className="btn btn-primary"
+              style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: '4px' }}
+            >
+              Riprova
+            </button>
+          )}
+        </div>
+
+        {/* Preview Panel */}
+        <div style={{ marginBottom: '24px', textAlign: 'left' }}>
+          <span className="badge" style={{ marginBottom: '8px' }}>ANTEPRIMA EMAIL</span>
+          <div style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            padding: '16px',
+            fontSize: '0.85rem',
+            lineHeight: 1.6,
+            maxHeight: '180px',
+            overflowY: 'auto'
+          }}>
+            <p style={{ margin: '0 0 8px 0', borderBottom: '1px dashed #cbd5e1', paddingBottom: '6px' }}>
+              <strong>A:</strong> {data.toEmail} ({data.toName})<br />
+              <strong>Oggetto:</strong> {data.subject}
+            </p>
+            <pre style={{ margin: 0, fontFamily: 'inherit', whiteSpace: 'pre-wrap' }}>
+              {data.bodyText}
+            </pre>
+          </div>
+        </div>
+
+        {/* Interactive Action Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+          <button 
+            onClick={triggerMailto}
+            className="btn btn-outline"
+            style={{ 
+              padding: '12px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '8px', 
+              fontSize: '0.9rem',
+              borderColor: '#0f766e',
+              color: '#0f766e'
+            }}
+          >
+            <Mail size={16} /> Apri Client Mail
+          </button>
+          <button 
+            onClick={triggerWhatsApp}
+            className="btn btn-secondary"
+            style={{ 
+              padding: '12px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '8px', 
+              fontSize: '0.9rem',
+              background: '#25D366',
+              color: 'white',
+              border: 'none'
+            }}
+          >
+            <MessageSquare size={16} /> WhatsApp Gestore
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            onClick={handleCopyText}
+            className="btn btn-outline"
+            style={{ 
+              flex: 1,
+              padding: '10px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '6px', 
+              fontSize: '0.85rem'
+            }}
+          >
+            <Copy size={14} /> Copia Testo Email
+          </button>
+          <button 
+            onClick={onClose}
+            className="btn btn-primary"
+            style={{ 
+              flex: 1,
+              padding: '10px', 
+              fontSize: '0.85rem'
+            }}
+          >
+            Chiudi
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

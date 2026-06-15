@@ -12,6 +12,8 @@ export default function AdminPortal({
   deleteBooking, 
   reviews, 
   triggerToast,
+  notificationLogs,
+  setNotificationLogs,
   onClose 
 }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,6 +21,23 @@ export default function AdminPortal({
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const [emailConfig, setEmailConfig] = useState(() => {
+    const saved = localStorage.getItem('webdog_email_config');
+    return saved ? JSON.parse(saved) : {
+      method: 'emailjs', // 'simulated', 'emailjs', 'mailto'
+      emailjsServiceId: 'service_77dn8u2',
+      emailjsTemplateId: 'template_k3sc8sn',
+      emailjsPublicKey: '6n8JEdiKSucjPCKmR',
+      adminEmail: 'emanuelebarese@gmail.com'
+    };
+  });
+
+  const handleSaveEmailConfig = (e) => {
+    e.preventDefault();
+    localStorage.setItem('webdog_email_config', JSON.stringify(emailConfig));
+    triggerToast('Configurazione Salvata', 'Configurazione email salvata con successo.', 'success', 'System');
+  };
 
   // Tabs: 'dashboard', 'agenda', 'reviews', 'notifications'
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1154,7 +1173,7 @@ export default function AdminPortal({
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {[
-                  { name: 'Notifiche Email standard', desc: 'Invio immediato di email con template personalizzati (.HTML)', active: true, channel: 'Email Server' },
+                  { name: 'Notifiche Email standard', desc: `Metodo attuale: ${emailConfig.method === 'emailjs' ? 'EmailJS REST API (Automatico)' : emailConfig.method === 'mailto' ? 'Client di posta locale (mailto:)' : 'Simulatore Locale'}`, active: true, channel: 'Email Server' },
                   { name: 'Integrazione WhatsApp (Stripe/Twilio APIs)', desc: 'Messaggi istantanei al cellulare inserito in fase di prenotazione', active: true, channel: 'WhatsApp API' },
                   { name: 'Alert Bot Telegram (Operatore)', desc: 'Il bot invia messaggi di notifica diretta al gruppo admin dei gestori', active: true, channel: 'Telegram Bot' }
                 ].map((chan, idx) => (
@@ -1181,18 +1200,119 @@ export default function AdminPortal({
               </div>
             </div>
 
+            {/* Email Config Panel */}
+            <div className="glass-panel" style={{ padding: '24px' }}>
+              <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0f2d2a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mail size={20} /> Modulo Configurazione Invio Email
+              </h3>
+              <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '24px' }}>
+                Scegli il metodo di invio delle email per il "Modulo Messaggi" e "Dettagli Appuntamento". Configura <strong>EmailJS</strong> per l'invio automatico e silenzioso al cliente.
+              </p>
+
+              <form onSubmit={handleSaveEmailConfig}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 700 }}>METODO DI INVIO EMAIL</label>
+                  <select 
+                    value={emailConfig.method}
+                    onChange={(e) => setEmailConfig({ ...emailConfig, method: e.target.value })}
+                    className="form-input"
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px' }}
+                  >
+                    <option value="simulated">Simulatore Locale (Solo Log e Notifiche Toast)</option>
+                    <option value="mailto">Client di Posta Locale (mailto: con CC Cliente)</option>
+                    <option value="emailjs">EmailJS REST API (Invio Automatico in Tempo Reale)</option>
+                  </select>
+                </div>
+
+                {emailConfig.method === 'emailjs' && (
+                  <div style={{ 
+                    animation: 'fadeIn 0.3s ease-out', 
+                    background: '#f8fafc', 
+                    padding: '20px', 
+                    borderRadius: '12px', 
+                    border: '1px solid #e2e8f0', 
+                    marginBottom: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px'
+                  }}>
+                    <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f766e', margin: 0 }}>Credenziali EmailJS</h4>
+                    <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
+                      Crea un account gratuito su <a href="https://www.emailjs.com" target="_blank" rel="noreferrer" style={{ color: '#0284c7', textDecoration: 'underline' }}>emailjs.com</a>, aggiungi un Email Service e un Email Template, poi incolla i codici qui sotto.
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label className="form-label">SERVICE ID</label>
+                        <input 
+                          type="text" 
+                          placeholder="es: service_xxxxx" 
+                          value={emailConfig.emailjsServiceId} 
+                          onChange={(e) => setEmailConfig({ ...emailConfig, emailjsServiceId: e.target.value })}
+                          required={emailConfig.method === 'emailjs'}
+                          className="form-input" 
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">TEMPLATE ID</label>
+                        <input 
+                          type="text" 
+                          placeholder="es: template_xxxxx" 
+                          value={emailConfig.emailjsTemplateId} 
+                          onChange={(e) => setEmailConfig({ ...emailConfig, emailjsTemplateId: e.target.value })}
+                          required={emailConfig.method === 'emailjs'}
+                          className="form-input" 
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label">PUBLIC KEY (USER ID)</label>
+                      <input 
+                        type="text" 
+                        placeholder="es: user_xxxxxxxxxxxxx o la tua chiave pubblica" 
+                        value={emailConfig.emailjsPublicKey} 
+                        onChange={(e) => setEmailConfig({ ...emailConfig, emailjsPublicKey: e.target.value })}
+                        required={emailConfig.method === 'emailjs'}
+                        className="form-input" 
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 700 }}>EMAIL RICEVENTE AMMINISTRATORE</label>
+                  <input 
+                    type="email" 
+                    placeholder="info@webdog.it" 
+                    value={emailConfig.adminEmail} 
+                    onChange={(e) => setEmailConfig({ ...emailConfig, adminEmail: e.target.value })}
+                    required
+                    className="form-input" 
+                    style={{ width: '100%' }}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginTop: '6px' }}>
+                    Le prenotazioni e i messaggi dei clienti verranno inviati in copia o direttamente a questo indirizzo.
+                  </span>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  style={{ width: '100%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  <Check size={16} /> Salva Configurazione Email
+                </button>
+              </form>
+            </div>
+
             {/* Notification logs history */}
             <div className="glass-panel" style={{ padding: '24px' }}>
               <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0f2d2a', marginBottom: '16px' }}>
                 Registro Storico Alert Inviati (Logs Recenti)
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {[
-                  { title: 'Conferma Prenotazione Inviata', details: 'A: emanuele@test.it - Servizio: Passeggiata - Stato: Consegnato', time: '5 minuti fa', chan: 'Email' },
-                  { title: 'Nuovo Alert Nuova Prenotazione', details: 'A: +39 333 456789 (Operatore) - Stato: Inviato', time: '12 minuti fa', chan: 'WhatsApp' },
-                  { title: 'Modifica Appuntamento Spedito', details: 'A: giulia@domain.com - Data: 12/06 - Stato: Letto', time: '1 ora fa', chan: 'Email' },
-                  { title: 'Promemoria Appuntamento (24h pre)', details: 'A: marco.rossi@gmail.com - Stato: Eseguito', time: 'Ieri, 18:30', chan: 'Telegram Bot' }
-                ].map((log, lIdx) => (
+                {notificationLogs.map((log, lIdx) => (
                   <div key={lIdx} style={{
                     padding: '12px 16px',
                     borderLeft: '4px solid #0f766e',
