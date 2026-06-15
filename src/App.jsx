@@ -94,7 +94,8 @@ const galleryImages = [
   { id: 3, src: '/gallery_training.png', category: 'Educazione', title: 'Focalizzazione e Agility', desc: 'Addestramento stimolante con rinforzo positivo.' },
   { id: 4, src: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=600', category: 'Eventi', title: 'Puppy Class di Gruppo', desc: 'Socializzazione precoce per cuccioli dai 3 ai 6 mesi.' },
   { id: 5, src: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&q=80&w=600', category: 'Passeggiate', title: 'Gruppo di Passeggiata al Parco', desc: 'Attività stimolante in branco guidato.' },
-  { id: 6, src: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=600', category: 'Dog Sitting', title: 'Coccole a domicilio', desc: 'Assistenza affettuosa e personalizzata.' }
+  { id: 6, src: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=600', category: 'Dog Sitting', title: 'Coccole a domicilio', desc: 'Assistenza affettuosa e personalizzata.' },
+  { id: 7, src: '/albums/IMG_20260322_121538.jpg', category: 'Gare Cinofile', title: 'Gara di Agility Dog', desc: 'Freya & Na\'vi.' }
 ];
 
 export default function App() {
@@ -131,12 +132,12 @@ export default function App() {
     dogName: '',
     dogBreed: '',
     dogAge: '',
-    service: 'Passeggiata Cinofila (30m)',
+    service: 'Dog Walking (30m)',
     date: '',
     time: '10:00',
     notes: '',
     gdpr: false,
-    paymentMethod: 'sede', // 'sede' or 'online'
+    paymentMethod: 'contanti', // 'contanti', 'paypal', 'revolut', 'iban'
   });
 
   // Client Review Form State
@@ -145,7 +146,8 @@ export default function App() {
     dogName: '',
     dogBreed: '',
     rating: 5,
-    comment: ''
+    comment: '',
+    photo: null
   });
 
   // Selected date on calendar
@@ -219,10 +221,29 @@ export default function App() {
 
     setBookings((prev) => [newBooking, ...prev]);
 
+    const messageBody = `Nuova Prenotazione WebDog!
+Cliente: ${bookingForm.firstName} ${bookingForm.lastName}
+Telefono: ${bookingForm.phone}
+Email: ${bookingForm.email}
+Cane: ${bookingForm.dogName} (${bookingForm.dogBreed}, ${bookingForm.dogAge})
+Servizio: ${bookingForm.service}
+Data: ${bookingForm.date} alle ${bookingForm.time}
+Pagamento: ${bookingForm.paymentMethod}
+Note: ${bookingForm.notes || 'Nessuna nota'}
+`;
+
+    // Apri l'app mail del cliente con CC a se stesso
+    window.location.href = `mailto:info@webdog.it?cc=${encodeURIComponent(bookingForm.email)}&subject=${encodeURIComponent('Conferma Prenotazione WebDog')}&body=${encodeURIComponent(messageBody)}`;
+
+    // Apri in parallelo chat WhatsApp per inviare il messaggio
+    setTimeout(() => {
+      window.open(`https://wa.me/393467251989?text=${encodeURIComponent(messageBody)}`, '_blank');
+    }, 500);
+
     // Send mock client alerts
     triggerToast(
       'Prenotazione Inviata',
-      `Grazie ${bookingForm.firstName}! Appuntamento per ${bookingForm.dogName} registrato. Attendi la conferma.`,
+      `Grazie ${bookingForm.firstName}! Appuntamento registrato. La tua app email/WhatsApp si aprirà per inviarci i dati confermati.`,
       'success',
       'Email e SMS'
     );
@@ -246,14 +267,25 @@ export default function App() {
       dogName: '',
       dogBreed: '',
       dogAge: '',
-      service: 'Passeggiata Cinofila (30m)',
+      service: 'Dog Walking (30m)',
       date: '',
       time: '10:00',
       notes: '',
       gdpr: false,
-      paymentMethod: 'sede'
+      paymentMethod: 'contanti'
     });
     setSelectedCalendarDay(null);
+  };
+
+  const handleReviewPhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReviewForm((prev) => ({ ...prev, photo: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Review Submit handler
@@ -293,7 +325,8 @@ export default function App() {
       dogName: '',
       dogBreed: '',
       rating: 5,
-      comment: ''
+      comment: '',
+      photo: null
     });
   };
 
@@ -405,20 +438,21 @@ export default function App() {
     const bookingOnDay = bookings.find((b) => b.date === dateStr);
     if (bookingOnDay) {
       status = bookingOnDay.status === 'confirmed' ? 'occupied' : 'pending';
-    } else {
-      // Mock static occupancy for realism
-      const dayOfWeek = new Date(2026, 5, d).getDay(); // 0 = Sun, 6 = Sat
-      if (dayOfWeek === 0 || d === 14 || d === 28) {
-        status = 'occupied';
-      } else if (d === 8 || d === 22) {
-        status = 'pending';
-      }
     }
 
     calendarDays.push({ dayNum: d, dateStr, status });
   }
 
   const handleCalendarDayClick = (day) => {
+    if (day.dayNum < 15) {
+      triggerToast(
+        'Data Passata',
+        'Non è possibile effettuare prenotazioni retrodatate (prima di oggi).',
+        'error',
+        'Calendario'
+      );
+      return;
+    }
     if (day.status === 'occupied') {
       triggerToast(
         'Giorno Non Disponibile',
@@ -692,7 +726,7 @@ export default function App() {
                 <span style={{ fontSize: '1.5rem' }}>🐶</span>
                 <div>
                   <h5 style={{ fontWeight: 800, fontSize: '0.9rem' }}>Educatore Certificato</h5>
-                  <p style={{ fontSize: '0.75rem', color: '#64748b' }}>FISC & CSEN</p>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b' }}>CSEN</p>
                 </div>
               </div>
 
@@ -929,7 +963,7 @@ export default function App() {
                     { name: 'Passeggiate Educative', desc: 'Uscite in natura focalizzate su stimoli olfattivi e calma.' },
                     { name: 'Gestione Cuccioli (Puppy Classes)', desc: 'Prevenzione problemi comportamentali e socializzazione.' },
                     { name: 'Supporto ai Proprietari', desc: 'Consulenze mirate per comprendere al meglio i comportamenti.' },
-                    { name: 'Asilo', desc: 'Operatore presso asilo.' },
+                    { name: 'Asilo', desc: 'Operatore presso centro cinofilo.' },
                   ].map((comp, idx) => (
                     <div key={idx} style={{ padding: '8px 12px', background: 'white', borderRadius: '8px', borderLeft: '3px solid #0284c7' }}>
                       <h5 style={{ fontWeight: 700, fontSize: '0.85rem', color: '#042f2e' }}>{comp.name}</h5>
@@ -943,16 +977,8 @@ export default function App() {
               {activeAboutTab === 'certificazioni' && (
                 <div style={{ animation: 'fadeIn 0.3s ease-out', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ padding: '10px 14px', background: 'white', borderRadius: '8px' }}>
-                    <strong style={{ fontSize: '0.85rem', display: 'block' }}>Diploma Nazionale Educatore Cinofilo CSEN / FISC</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Anno di conseguimento: 2021 • Riconosciuto CONI</span>
-                  </div>
-                  <div style={{ padding: '10px 14px', background: 'white', borderRadius: '8px' }}>
-                    <strong style={{ fontSize: '0.85rem', display: 'block' }}>Primo Soccorso Veterinario di base</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Certificato di idoneità per gestione emergenze cinofile</span>
-                  </div>
-                  <div style={{ padding: '10px 14px', background: 'white', borderRadius: '8px' }}>
-                    <strong style={{ fontSize: '0.85rem', display: 'block' }}>Seminari di Aggiornamento su Ansia da Separazione</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Relatore Dr. Simone Rossi - Etologo</span>
+                    <strong style={{ fontSize: '0.85rem', display: 'block' }}>Diploma Nazionale Educatore Cinofilo CSEN</strong>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Anno di conseguimento: 2026 • Riconosciuto CONI</span>
                   </div>
                 </div>
               )}
@@ -1112,6 +1138,23 @@ export default function App() {
                   </button>
                 </div>
               </div>
+              {/* Servizio Matrimonio */}
+              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>💍 Wedding Dog Sitter</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
+                    Il tuo migliore amico può esserci anche il giorno del tuo matrimonio! Servizio dedicato per i momenti più importanti della cerimonia.
+                  </p>
+                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <p>⏱️ Durata: <strong>Mezza Giornata / Giornata intera</strong></p>
+                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>A Partire da €150 mezza giornata / €250 giornata intera</strong></p>
+                    <p style={{ marginTop: '4px' }}> 🐾 Servizio personalizzato in base alle tue esigenze e alle necessità del tuo cane.</p>
+                  </div>
+                </div>
+                <button onClick={() => handleServiceSelect('Wedding Dog Sitter')} className="btn btn-primary" style={{ width: '100%' }}>
+                  Prenota Ora
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1226,6 +1269,10 @@ export default function App() {
                       key={day.dayNum}
                       onClick={() => handleCalendarDayClick(day)}
                       className={`calendar-cell ${selectedCalendarDay === day.dayNum ? 'selected' : ''}`}
+                      style={{ 
+                        opacity: day.dayNum < 15 ? 0.4 : 1, 
+                        cursor: day.dayNum < 15 ? 'not-allowed' : 'pointer' 
+                      }}
                     >
                       <span className="calendar-cell-num">{day.dayNum}</span>
 
@@ -1342,12 +1389,10 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label className="form-label">ETÀ CANE (ANNI)</label>
+                    <label className="form-label">ETÀ CANE (ANNI O MESI)</label>
                     <input
-                      type="number"
-                      placeholder="3"
-                      min="0"
-                      max="25"
+                      type="text"
+                      placeholder="es: 3 anni, 6 mesi"
                       value={bookingForm.dogAge}
                       onChange={(e) => setBookingForm({ ...bookingForm, dogAge: e.target.value })}
                       required
@@ -1381,6 +1426,10 @@ export default function App() {
                         <option value="Educazione Base">🎓 Educazione Base — €30</option>
                         <option value="Consulenza Pre-Adozione">📋 Consulenza Pre-Adozione — €25</option>
                       </optgroup>
+                      <optgroup label="👑 Wedding Dog Sitter">
+                        <option value="Wedding Dog Sitter">💍 Wedding Dog Sitter — Da €150</option>
+                        <option value="Wedding Dog Sitter">💍 Wedding Dog Sitter — Da €250</option>
+                      </optgroup> 
                     </select>
                   </div>
                   <div>
@@ -1427,28 +1476,28 @@ export default function App() {
                   border: '1px solid #e2e8f0',
                   marginBottom: '20px'
                 }}>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '12px' }}>
                     MODALITÀ DI PAGAMENTO
                   </span>
-                  <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="sede"
-                        checked={bookingForm.paymentMethod === 'sede'}
-                        onChange={() => setBookingForm({ ...bookingForm, paymentMethod: 'sede' })}
-                      /> In Sede (Posticipato)
+                      <input type="radio" name="payment" value="contanti" checked={bookingForm.paymentMethod === 'contanti'} onChange={() => setBookingForm({ ...bookingForm, paymentMethod: 'contanti' })} /> Contanti
                     </label>
+
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="online"
-                        checked={bookingForm.paymentMethod === 'online'}
-                        onChange={() => setBookingForm({ ...bookingForm, paymentMethod: 'online' })}
-                      /> Online (Stripe, PayPal, CC)
+                      <input type="radio" name="payment" value="paypal" checked={bookingForm.paymentMethod === 'paypal'} onChange={() => setBookingForm({ ...bookingForm, paymentMethod: 'paypal' })} /> PayPal
                     </label>
+                    {bookingForm.paymentMethod === 'paypal' && <div style={{marginLeft: '24px', fontSize: '0.8rem', color: '#0f766e'}}>Email PayPal: <strong>tidus291@hotmail.com</strong></div>}
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                      <input type="radio" name="payment" value="revolut" checked={bookingForm.paymentMethod === 'revolut'} onChange={() => setBookingForm({ ...bookingForm, paymentMethod: 'revolut' })} /> Revolut
+                    </label>
+                    {bookingForm.paymentMethod === 'revolut' && <div style={{marginLeft: '24px', fontSize: '0.8rem', color: '#0f766e'}}>Link: <a href="https://revolut.me/emanuebh6m" target="_blank" rel="noreferrer" style={{color: '#0284c7'}}>revolut.me/emanuebh6m</a></div>}
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                      <input type="radio" name="payment" value="iban" checked={bookingForm.paymentMethod === 'iban'} onChange={() => setBookingForm({ ...bookingForm, paymentMethod: 'iban' })} /> Bonifico (IBAN)
+                    </label>
+                    {bookingForm.paymentMethod === 'iban' && <div style={{marginLeft: '24px', fontSize: '0.8rem', color: '#0f766e'}}>IBAN: <strong>IT58M0329601601000067602411</strong></div>}
                   </div>
                 </div>
 
@@ -1474,7 +1523,7 @@ export default function App() {
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '24px' }}>
                   <input
-                    type="checkbox"Area Copertura Servizi
+                    type="checkbox"
                     id="gdpr"
                     checked={bookingForm.gdpr}
                     onChange={(e) => setBookingForm({ ...bookingForm, gdpr: e.target.checked })}
@@ -1608,6 +1657,22 @@ export default function App() {
                     />
                   </div>
 
+                  <div style={{ marginBottom: '20px' }}>
+                    <label className="form-label">ALLEGA FOTO (OPZIONALE)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleReviewPhotoUpload}
+                      className="form-input"
+                      style={{ padding: '8px' }}
+                    />
+                    {reviewForm.photo && (
+                      <div style={{ marginTop: '10px' }}>
+                        <img src={reviewForm.photo} alt="Anteprima" style={{ height: '80px', borderRadius: '8px', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                  </div>
+
                   <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
                     Pubblica Recensione
                   </button>
@@ -1661,6 +1726,12 @@ export default function App() {
                     "{rev.comment}"
                   </p>
 
+                  {rev.photo && (
+                    <div style={{ marginTop: '16px' }}>
+                      <img src={rev.photo} alt={`Foto caricata da ${rev.name}`} style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px' }} />
+                    </div>
+                  )}
+
                   <span style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8', textAlign: 'right', marginTop: '12px' }}>
                     Data recensione: {rev.date}
                   </span>
@@ -1692,7 +1763,7 @@ export default function App() {
             marginBottom: '32px',
             flexWrap: 'wrap'
           }}>
-            {['Tutti', 'Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi'].map((cat) => (
+            {['Tutti', 'Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'Gare Cinofile', ].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveGalleryFilter(cat)}
@@ -1855,7 +1926,9 @@ export default function App() {
                     </div>
                     <div>
                       <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', fontWeight: 600 }}>INDIRIZZO SEDE & CAMPO</span>
-                      <strong style={{ fontSize: '0.95rem' }}>Via Raffaele Ruggiero, 219, (NA)</strong>
+                      <a href="https://www.google.com/maps/place/Smart+Dog+Napoli/@40.8381864,14.1673849,17z/data=!3m1!4b1!4m6!3m5!1s0x133b0eddfa13099d:0xfe5131a0f30b3f4e!8m2!3d40.8381824!4d14.1699598!16s%2Fg%2F11cp09wn6m?entry=ttu&g_ep=EgoyMDI2MDYxMC4wIKXMDSoASAFQAw%3D%3D" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <strong style={{ fontSize: '0.95rem' }}>Via Raffaele Ruggiero, 219, 80126 Napoli (NA)</strong>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -1880,44 +1953,28 @@ export default function App() {
                   Area Copertura Servizi
                 </h4>
 
-                {/* SVG vector custom vector styled map */}
+                {/* Google Maps Embed */}
                 <div style={{
                   width: '100%',
-                  height: '180px',
+                  height: '220px',
                   background: '#e2e8f0',
                   borderRadius: '12px',
                   border: '1px solid #cbd5e1',
                   overflow: 'hidden',
                   position: 'relative'
                 }}>
-                  <svg viewBox="0 0 300 180" style={{ width: '100%', height: '100%' }}>
-                    {/* Simulated river */}
-                    <path d="M0,90 Q75,70 150,110 T300,90" fill="none" stroke="#bae6fd" strokeWidth="12" />
-
-                    {/* Grid streets */}
-                    <line x1="50" y1="0" x2="50" y2="180" stroke="#cbd5e1" strokeWidth="2" />
-                    <line x1="180" y1="0" x2="180" y2="180" stroke="#cbd5e1" strokeWidth="2" />
-                    <line x1="250" y1="0" x2="250" y2="180" stroke="#cbd5e1" strokeWidth="1.5" />
-                    <line x1="0" y1="40" x2="300" y2="40" stroke="#cbd5e1" strokeWidth="2" />
-                    <line x1="0" y1="140" x2="300" y2="140" stroke="#cbd5e1" strokeWidth="2.5" />
-
-                    {/* Green zone (campo cinofilo) */}
-                    <rect x="20" y="50" width="80" height="70" rx="10" fill="#dcfce7" opacity="0.8" stroke="#86efac" strokeWidth="1" />
-                    <text x="60" y="90" fontSize="8" fontWeight="bold" fill="#15803d" textAnchor="middle">Centro Cinofilo</text>
-
-                    {/* Sede central pin */}
-                    <circle cx="180" cy="140" r="14" fill="rgba(15, 118, 110, 0.2)" />
-                    <circle cx="180" cy="140" r="6" fill="#0f766e" />
-                    <path d="M180,128 L180,140" stroke="#0f766e" strokeWidth="2" />
-                    <text x="180" y="125" fontSize="8" fontWeight="bold" fill="#0f766e" textAnchor="middle">La Nostra Sede</text>
-
-                    {/* Partners pins */}
-                    <circle cx="250" cy="40" r="4" fill="#0284c7" />
-                    <text x="250" y="32" fontSize="6" fontWeight="bold" fill="#0284c7" textAnchor="middle">Veterinario Convenz.</text>
-
-                    <circle cx="90" cy="15" r="4" fill="#fbbf24" />
-                    <text x="90" y="10" fontSize="6" fontWeight="bold" fill="#d97706" textAnchor="middle">Toelettatura</text>
-                  </svg>
+                  <iframe 
+                    width="100%" 
+                    height="100%" 
+                    frameBorder="0" 
+                    scrolling="no" 
+                    marginHeight="0" 
+                    marginWidth="0" 
+                    src="https://maps.google.com/maps?width=100%25&amp;height=100%25&amp;hl=it&amp;q=Napoli+(Area%20Copertura)&amp;t=&amp;z=10&amp;ie=UTF8&amp;iwloc=B&amp;output=embed"
+                    style={{ border: 0 }}
+                    allowFullScreen=""
+                    loading="lazy"
+                  ></iframe>
 
                   {/* Floating legend tag */}
                   <span style={{
@@ -1927,11 +1984,12 @@ export default function App() {
                     fontSize: '0.65rem',
                     fontWeight: 700,
                     background: 'rgba(255, 255, 255, 0.9)',
-                    padding: '2px 8px',
+                    padding: '4px 8px',
                     borderRadius: '4px',
-                    border: '1px solid #cbd5e1'
+                    border: '1px solid #cbd5e1',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}>
-                    📍 Copertura: Firenze e Limitrofi (20km)
+                    📍 Copertura: Napoli e Provincia
                   </span>
                 </div>
               </div>
@@ -2005,7 +2063,7 @@ export default function App() {
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', color: '#99f6e4' }}>
                 <li>Lunedì - Venerdì: 08:00 - 20:00</li>
                 <li>Sabato: 09:00 - 18:00</li>
-                <li>Domenica: Solo Emergenze / Sitting</li>
+                <li>Domenica: Riposo</li>
               </ul>
             </div>
 
