@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useRealtimeBookings } from './hooks/useRealtimeBookings';
 import {
   Dog, Activity, Calendar, DollarSign, Phone, Shield, Heart, Award,
   FileText, Check, ChevronLeft, ChevronRight, Star, MapPin, Mail,
@@ -113,11 +114,8 @@ export default function App() {
     sessionStorage.setItem('webdog_view', viewMode);
   }, [viewMode]);
 
-  // States with LocalStorage backup
-  const [bookings, setBookings] = useState(() => {
-    const saved = localStorage.getItem('webdog_bookings');
-    return saved ? JSON.parse(saved) : defaultBookings;
-  });
+  // Bookings — Firebase Realtime Database with localStorage fallback
+  const { bookings, addBooking, updateBooking, deleteBookingById, syncStatus } = useRealtimeBookings(defaultBookings);
 
   const [reviews, setReviews] = useState(() => {
     const saved = localStorage.getItem('webdog_reviews');
@@ -200,10 +198,8 @@ export default function App() {
   const [calendarDate, setCalendarDate] = useState(new Date(2026, 5, 2)); // June 2026
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
 
-  // Auto-Save states to localStorage
-  useEffect(() => {
-    localStorage.setItem('webdog_bookings', JSON.stringify(bookings));
-  }, [bookings]);
+  // Auto-Save reviews to localStorage (bookings are now handled by Firebase hook)
+  // Note: bookings localStorage write is handled inside useRealtimeBookings hook
 
   useEffect(() => {
     localStorage.setItem('webdog_reviews', JSON.stringify(reviews));
@@ -317,7 +313,8 @@ export default function App() {
       status: 'pending'
     };
 
-    setBookings((prev) => [newBooking, ...prev]);
+    // ✅ Firebase real-time sync — appears on admin panel on any device instantly
+    addBooking(newBooking);
 
     // Define the email data (used both for silent send and modal)
     const emailData = {
@@ -742,50 +739,44 @@ Messaggio: ${contactForm.message}`
     });
   };
 
-  // Admin database controls
+  // Admin database controls — all mutations go through Firebase sync hook
   const updateBookingStatus = (id, newStatus) => {
-    setBookings((prev) => prev.map((b) => {
-      if (b.id === id) {
-        const updated = { ...b, status: newStatus };
-        if (newStatus === 'confirmed') {
-          triggerToast(
-            'Appuntamento Confermato',
-            `Notifica di conferma inviata con successo al proprietario di ${b.dogName}.`,
-            'success',
-            'WhatsApp API'
-          );
-        } else if (newStatus === 'cancelled') {
-          triggerToast(
-            'Slot Annullato',
-            `Notifica di cancellazione/rimborso inviata al cliente ${b.firstName}.`,
-            'error',
-            'Email Server'
-          );
-        }
-        return updated;
-      }
-      return b;
-    }));
-  };
-
-  const updateBookingDetails = (id, updatedFields) => {
-    setBookings((prev) => prev.map((b) => {
-      if (b.id === id) {
-        const updated = { ...b, ...updatedFields };
+    updateBooking(id, { status: newStatus });
+    const b = bookings.find((bk) => bk.id === id);
+    if (b) {
+      if (newStatus === 'confirmed') {
         triggerToast(
-          'Appuntamento Spostato',
-          `Nuovi dettagli inviati a ${b.firstName}: ${updatedFields.date} ore ${updatedFields.time}.`,
+          'Appuntamento Confermato',
+          `Notifica di conferma inviata con successo al proprietario di ${b.dogName}.`,
           'success',
           'WhatsApp API'
         );
-        return updated;
+      } else if (newStatus === 'cancelled') {
+        triggerToast(
+          'Slot Annullato',
+          `Notifica di cancellazione/rimborso inviata al cliente ${b.firstName}.`,
+          'error',
+          'Email Server'
+        );
       }
-      return b;
-    }));
+    }
+  };
+
+  const updateBookingDetails = (id, updatedFields) => {
+    updateBooking(id, updatedFields);
+    const b = bookings.find((bk) => bk.id === id);
+    if (b) {
+      triggerToast(
+        'Appuntamento Spostato',
+        `Nuovi dettagli inviati a ${b.firstName}: ${updatedFields.date} ore ${updatedFields.time}.`,
+        'success',
+        'WhatsApp API'
+      );
+    }
   };
 
   const deleteBooking = (id) => {
-    setBookings((prev) => prev.filter((b) => b.id !== id));
+    deleteBookingById(id);
     triggerToast(
       'Prenotazione Rimossa',
       'La prenotazione è stata eliminata definitivamente dall\'archivio storico.',
@@ -894,6 +885,7 @@ Messaggio: ${contactForm.message}`
           triggerToast={triggerToast}
           notificationLogs={notificationLogs}
           setNotificationLogs={setNotificationLogs}
+          syncStatus={syncStatus}
           onClose={() => setViewMode('client')}
         />
         <NotificationToast toasts={toasts} removeToast={removeToast} />

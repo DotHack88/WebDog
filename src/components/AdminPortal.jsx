@@ -14,8 +14,23 @@ export default function AdminPortal({
   triggerToast,
   notificationLogs,
   setNotificationLogs,
+  syncStatus,
   onClose 
 }) {
+
+  // ── Firebase sync status badge ────────────────────────────
+  const syncBadge = (() => {
+    switch (syncStatus) {
+      case 'synced':
+        return { icon: '🟢', label: 'Live Sync', color: '#10b981', bg: '#d1fae5', title: 'Firebase Realtime DB connesso — tutte le prenotazioni sono sincronizzate in tempo reale.' };
+      case 'connecting':
+        return { icon: '🟡', label: 'Connessione...', color: '#f59e0b', bg: '#fef3c7', title: 'Connessione a Firebase in corso...' };
+      case 'error':
+        return { icon: '🔴', label: 'Sync Error', color: '#ef4444', bg: '#fee2e2', title: 'Errore di sincronizzazione Firebase. Le modifiche sono salvate localmente.' };
+      default:
+        return { icon: '⚪', label: 'Solo Locale', color: '#64748b', bg: '#f1f5f9', title: 'Firebase non configurato. Le prenotazioni sono salvate solo su questo dispositivo.' };
+    }
+  })();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -388,6 +403,18 @@ export default function AdminPortal({
             <h1 style={{ fontWeight: 800, fontSize: '1rem', color: '#0f766e', lineHeight: 1 }}>WebDog</h1>
             <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Gestionale</span>
           </div>
+          {/* Sync badge — mobile */}
+          <span
+            title={syncBadge.title}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              background: syncBadge.bg, color: syncBadge.color,
+              fontSize: '0.6rem', fontWeight: 700, padding: '2px 7px',
+              borderRadius: '999px', letterSpacing: '0.04em', cursor: 'help'
+            }}
+          >
+            {syncBadge.icon} {syncBadge.label}
+          </span>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
@@ -416,14 +443,36 @@ export default function AdminPortal({
         flexShrink: 0
       }}>
         <div>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }}>
+          {/* Logo + sync badge — desktop sidebar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
             <span style={{ fontSize: '2rem' }}>🐾</span>
             <div>
               <h1 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0f766e', lineHeight: 1 }}>WebDog</h1>
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>
                 GESTIONALE OPERATORE
               </span>
+            </div>
+          </div>
+          {/* Firebase sync status indicator */}
+          <div
+            title={syncBadge.title}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              background: syncBadge.bg, borderRadius: '10px',
+              padding: '8px 12px', marginBottom: '24px', cursor: 'help'
+            }}
+          >
+            <span style={{ fontSize: '0.85rem' }}>{syncBadge.icon}</span>
+            <div>
+              <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: syncBadge.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {syncBadge.label}
+              </p>
+              <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', lineHeight: 1.3 }}>
+                {syncStatus === 'synced' ? 'Prenotazioni in tempo reale' :
+                 syncStatus === 'connecting' ? 'Avvio sincronizzazione...' :
+                 syncStatus === 'error' ? 'Fallback su localStorage' :
+                 'Configura Firebase per il sync'}
+              </p>
             </div>
           </div>
 
