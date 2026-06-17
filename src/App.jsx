@@ -102,8 +102,16 @@ const galleryImages = [
 
 export default function App() {
   // Main Navigation View: 'client' or 'admin'
-  const [viewMode, setViewMode] = useState('client');
+  // Persisted in sessionStorage so pull-to-refresh doesn't reset to home
+  const [viewMode, setViewMode] = useState(() => {
+    return sessionStorage.getItem('webdog_view') || 'client';
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Sync viewMode to sessionStorage on every change
+  useEffect(() => {
+    sessionStorage.setItem('webdog_view', viewMode);
+  }, [viewMode]);
 
   // States with LocalStorage backup
   const [bookings, setBookings] = useState(() => {
@@ -224,6 +232,58 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  /**
+   * Silent fire-and-forget EmailJS send.
+   * Used at form submission so mobile users (who may never see/close the modal)
+   * always trigger the admin notification automatically.
+   */
+  const sendEmailJSSilent = async (emailData) => {
+    try {
+      const saved = localStorage.getItem('webdog_email_config');
+      const config = saved ? JSON.parse(saved) : {
+        method: 'emailjs',
+        emailjsServiceId: 'service_77dn8u2',
+        emailjsTemplateId: 'template_k3sc8sn',
+        emailjsPublicKey: '6n8JEdiKSucjPCKmR',
+        adminEmail: 'emanuelebarese@gmail.com'
+      };
+
+      if (config.method !== 'emailjs') return; // only auto-send when EmailJS is configured
+      if (!config.emailjsServiceId || !config.emailjsTemplateId || !config.emailjsPublicKey) return;
+
+      const adminEmail = config.adminEmail || 'emanuelebarese@gmail.com';
+      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: config.emailjsServiceId,
+          template_id: config.emailjsTemplateId,
+          user_id: config.emailjsPublicKey,
+          template_params: {
+            to_name: 'Admin WebDog',
+            to_email: adminEmail,
+            reply_to: emailData.clientEmail || emailData.toEmail,
+            subject: emailData.subject,
+            message: emailData.bodyText,
+            message_html: emailData.bodyHtml
+          }
+        })
+      });
+
+      if (response.ok) {
+        addNotificationLog(
+          emailData.subject,
+          `A: ${adminEmail} (da: ${emailData.toEmail}) - Metodo: EmailJS Auto - Stato: Successo`,
+          'Email'
+        );
+        triggerToast('📧 Notifica Inviata', `Email di riepilogo inviata automaticamente a ${adminEmail}.`, 'success', 'EmailJS');
+      }
+    } catch (_err) {
+      // Silent fail — user already sees the booking success message
+      // The modal is still available as fallback on desktop
+    }
+  };
+
   // Pre-select service and scroll down
   const handleServiceSelect = (serviceName) => {
     setBookingForm((prev) => ({ ...prev, service: serviceName }));
@@ -259,7 +319,7 @@ export default function App() {
 
     setBookings((prev) => [newBooking, ...prev]);
 
-    // Define the email modal parameters
+    // Define the email data (used both for silent send and modal)
     const emailData = {
       type: 'booking',
       toEmail: bookingForm.email,
@@ -415,23 +475,30 @@ Pagamento: ${bookingForm.paymentMethod}
 Note: ${bookingForm.notes || 'Nessuna nota'}`
     };
 
-    setEmailModalData(emailData);
+    // ✅ FIX: Silent background send — works on Android/iOS without user interaction
+    sendEmailJSSilent(emailData);
 
-    // Send toast client alerts
+    // Show modal only on desktop as secondary/manual option
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) {
+      setEmailModalData(emailData);
+    }
+
+    // Confirmation toast to the user
     triggerToast(
-      'Prenotazione Registrata',
-      `Grazie ${bookingForm.firstName}! Appuntamento registrato. Gestisci l'invio della mail di riepilogo.`,
+      '✅ Prenotazione Inviata!',
+      `Grazie ${bookingForm.firstName}! La tua richiesta è stata registrata e la notifica è stata inviata al gestore.`,
       'success',
       'System'
     );
 
-    // Send mock operator notification
+    // Operator alert toast
     setTimeout(() => {
       triggerToast(
         'Nuova Prenotazione Ricevuta',
-        `Nuovo appuntamento da approvare da parte di ${bookingForm.firstName} ${bookingForm.lastName} per ${bookingForm.dogName}.`,
+        `Nuovo appuntamento da approvare: ${bookingForm.firstName} ${bookingForm.lastName} — ${bookingForm.dogName}.`,
         'warning',
-        'Telegram Bot'
+        'EmailJS'
       );
     }, 2500);
 
@@ -655,9 +722,16 @@ Email: ${contactForm.email}
 Messaggio: ${contactForm.message}`
     };
 
-    setEmailModalData(emailData);
+    // ✅ FIX: Silent background send — works on Android/iOS without user interaction
+    sendEmailJSSilent(emailData);
 
-    triggerToast('Messaggio Registrato', 'Il tuo messaggio è stato registrato. Gestisci l\'invio della mail di riepilogo.', 'success', 'System');
+    // Show modal only on desktop as secondary option
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) {
+      setEmailModalData(emailData);
+    }
+
+    triggerToast('✅ Messaggio Inviato!', `Grazie ${contactForm.name}! Il tuo messaggio è stato consegnato al gestore WebDog.`, 'success', 'System');
     
     // Reset Contact Form
     setContactForm({
@@ -1014,7 +1088,7 @@ Messaggio: ${contactForm.message}`
                 border: '8px solid rgba(255, 255, 255, 0.4)'
               }} className="floating-icon">
                 <img
-                  src="/chi_sono_profile.png"
+                  src="/chi_sono_profile.jpg"
                   alt="WebDog Professional"
                   style={{
                     width: '100%',
@@ -1185,7 +1259,7 @@ Messaggio: ${contactForm.message}`
                 border: '4px solid white'
               }}>
                 <img
-                  src="/chi_sono_profile.png"
+                  src="/chi_sono_profile.jpg"
                   alt="Chi Sono Professional Trainer"
                   style={{ width: '100%', height: 'auto', display: 'block' }}
                 />

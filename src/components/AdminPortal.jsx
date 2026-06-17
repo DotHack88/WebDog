@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Calendar, DollarSign, Users, Star, Trash2, Check, Clock, 
   ArrowLeft, LogOut, Download, RefreshCw, Sliders, Search, 
-  Lock, Mail, FileText, Smartphone, Bell, Eye, EyeOff
+  Lock, Mail, FileText, Smartphone, Bell, Eye, EyeOff, Menu, X
 } from 'lucide-react';
 
 export default function AdminPortal({ 
@@ -378,10 +378,36 @@ export default function AdminPortal({
   );
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#f8fafc', color: '#1e293b' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#f8fafc', color: '#1e293b', flexDirection: 'column' }}>
       
-      {/* SIDEBAR PANEL */}
-      <aside className="admin-glass-sidebar" style={{
+      {/* MOBILE TOP HEADER */}
+      <header className="admin-mobile-topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '1.3rem' }}>🐾</span>
+          <div>
+            <h1 style={{ fontWeight: 800, fontSize: '1rem', color: '#0f766e', lineHeight: 1 }}>WebDog</h1>
+            <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Gestionale</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={onClose}
+            style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 600 }}
+          >
+            <ArrowLeft size={16} /> Sito
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{ background: '#fee2e2', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '6px 10px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 700 }}
+          >
+            <LogOut size={14} /> Esci
+          </button>
+        </div>
+      </header>
+
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      {/* SIDEBAR PANEL — hidden on mobile */}
+      <aside className="admin-glass-sidebar admin-sidebar-desktop" style={{
         width: '280px',
         padding: '30px 24px',
         display: 'flex',
@@ -573,7 +599,7 @@ export default function AdminPortal({
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main style={{ flex: 1, padding: '40px', overflowY: 'auto', maxHeight: '100vh' }}>
+      <main style={{ flex: 1, padding: '40px', overflowY: 'auto', maxHeight: '100vh' }} className="admin-main-content">
         
         {/* TOP BAR ACTION */}
         <header style={{ 
@@ -1338,6 +1364,36 @@ export default function AdminPortal({
           </div>
         )}
       </main>
+      </div> {/* end flex wrapper */}
+
+      {/* MOBILE BOTTOM NAV BAR */}
+      <nav className="admin-mobile-bottom-nav">
+        {[
+          { id: 'dashboard', icon: <Sliders size={22} />, label: 'Dashboard' },
+          { id: 'agenda', icon: <Calendar size={22} />, label: 'Agenda', badge: pendingBookingsCount },
+          { id: 'reviews', icon: <Star size={22} />, label: 'Recensioni' },
+          { id: 'notifications', icon: <Bell size={22} />, label: 'Notifiche' },
+        ].map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`admin-bottom-nav-btn ${activeTab === item.id ? 'active' : ''}`}
+          >
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              {item.icon}
+              {item.badge > 0 && (
+                <span style={{
+                  position: 'absolute', top: '-6px', right: '-8px',
+                  background: '#ef4444', color: 'white', borderRadius: '999px',
+                  fontSize: '0.55rem', fontWeight: 800, padding: '1px 4px',
+                  lineHeight: 1.4, minWidth: '14px', textAlign: 'center'
+                }}>{item.badge}</span>
+              )}
+            </span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
