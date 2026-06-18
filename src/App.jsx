@@ -1139,9 +1139,6 @@ Messaggio: ${contactForm.message}`
         </div>
       </section>
 
-      {/* -------------------- URGENCY BANNER -------------------- */}
-      <UrgencyBanner bookings={bookings} />
-
       {/* -------------------- COUNTER STATS -------------------- */}
       <AnimatedCounters reviews={reviews} />
 
@@ -1350,7 +1347,7 @@ Messaggio: ${contactForm.message}`
               {activeAboutTab === 'competenze' && (
                 <div style={{ animation: 'fadeIn 0.3s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {[
-                    { name: 'Educazione Cinofila', desc: 'Costruzione di una solida base comunicativa cane-proprietario.' },
+                    { name: 'Educazione di base', desc: 'Costruzione di un solido binomio cane-proprietario.' },
                     { name: 'Dog Sitting & Cura h24', desc: 'Custodia attenta presso il domicilio del proprietario.' },
                     { name: 'Passeggiate Educative', desc: 'Uscite in natura focalizzate su stimoli olfattivi e calma.' },
                     { name: 'Gestione Cuccioli (Puppy Classes)', desc: 'Prevenzione problemi comportamentali e socializzazione.' },
@@ -2273,9 +2270,9 @@ Messaggio: ${contactForm.message}`
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <span className="badge">📍 COPERTURA TERRITORIALE</span>
-            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Zone Servite — 35 km da Arzano</h2>
+            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Zone Servite — 50 km da Arzano</h2>
             <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: '680px', margin: '8px auto 0 auto' }}>
-              Con base ad <strong style={{ color: '#0f766e' }}>Arzano (NA)</strong>, copriamo <strong style={{ color: '#0f766e' }}>55 comuni</strong> di Napoli e Provincia in un raggio di 35 km — dall'area flegrea e casertana al Vesuvio e all'area nolana.
+              Con base ad <strong style={{ color: '#0f766e' }}>Arzano (NA)</strong>, copriamo <strong style={{ color: '#0f766e' }}>67 zone</strong> tra Napoli e Provincia in un raggio di 50 km — dall'area flegrea e casertana al Vesuvio, dall'area nolana alla costa.
             </p>
           </div>
 
@@ -2291,7 +2288,7 @@ Messaggio: ${contactForm.message}`
               <span style={{ fontSize: '1.8rem' }}>📍</span>
               <div>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#042f2e' }}>Arzano (NA) — Base Operativa</p>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>55 comuni coperti · Raggio 35 km · Napoli e Provincia</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>67 zone coperte · Raggio 50 km · Napoli e Provincia</p>
               </div>
             </div>
           </div>
@@ -2302,17 +2299,17 @@ Messaggio: ${contactForm.message}`
               {
                 area: '⭐ Area Nord — Immediata (Base)',
                 color: '#0f766e', bg: '#f0fdfa',
-                cities: ['Arzano', 'Frattamaggiore', 'Frattaminore', 'Aversa', 'Casoria', 'Casavatore', 'Afragola', 'Cardito', 'Caivano', 'Crispano', 'Grumo Nevano', "Sant'Antimo", 'Melito di Napoli', 'Casandrino', 'Mugnano di Napoli', 'Calvizzano', 'Napoli']
+                cities: ['Arzano', 'Frattamaggiore', 'Frattaminore', 'Aversa', "Sant'Arpino", 'Casoria', 'Casavatore', 'Afragola', 'Cardito', 'Caivano', 'Crispano', 'Grumo Nevano', "Sant'Antimo", 'Melito di Napoli', 'Casandrino', 'Mugnano di Napoli', 'Calvizzano', 'Napoli']
               },
               {
                 area: '🏙️ Napoli Città',
                 color: '#1d4ed8', bg: '#eff6ff',
-                cities: ['Napoli (tutti i quartieri)']
+                cities: ['Napoli (tutti i quartieri)', 'Posillipo', 'San Giovanni a Teduccio']
               },
               {
                 area: '🌊 Area Flegrea & Ovest',
                 color: '#0369a1', bg: '#f0f9ff',
-                cities: ['Giugliano in Campania', 'Quarto', 'Qualiano', 'Villaricca', 'Marano di Napoli', 'Pozzuoli', 'Bacoli', 'Monte di Procida']
+                cities: ['Giugliano in Campania', 'Lago Patria', 'Varcaturo', 'Licola', 'Quarto', 'Monterusciello', 'Qualiano', 'Villaricca', 'Marano di Napoli', 'Pozzuoli', 'Bacoli', 'Baia', 'Miseno', 'Torregaveta', 'Monte di Procida', 'Pisani']
               },
               {
                 area: '🏭 Area Est & Nolana',
@@ -2656,9 +2653,9 @@ Messaggio: ${contactForm.message}`
             <div>
               <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Orari Servizi</h5>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', color: '#99f6e4' }}>
-                <li>Lunedì - Venerdì: 08:00 – 20:00</li>
-                <li>Sabato: 09:00 – 18:00</li>
-                <li>Domenica: Su prenotazione</li>
+                <li>🕗 Lunedì - Venerdì: 08:00 – 20:00</li>
+                <li>🕗 Sabato: 09:00 – 18:00</li>
+                <li>🕗 Domenica: Su prenotazione</li>
               </ul>
               <p style={{ fontSize: '0.75rem', color: '#5eead4', marginTop: '14px' }}>
                 📍 Napoli e Provincia
@@ -2676,7 +2673,6 @@ Messaggio: ${contactForm.message}`
               <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Note Legali</h5>
               <p style={{ fontSize: '0.75rem', color: '#5eead4', lineHeight: 1.6 }}>
                 WebDog di Emanuele Barese<br />
-                Assicurazione RC Professionale<br />
                 Educatore CSEN Albo n. 42081
               </p>
               <a
@@ -2759,80 +2755,6 @@ Messaggio: ${contactForm.message}`
   );
 }
 
-// ── UrgencyBanner ─────────────────────────────────────────────────────────
-function UrgencyBanner({ bookings }) {
-  const [dismissed, setDismissed] = React.useState(
-    () => sessionStorage.getItem('webdog_urgency_dismissed') === 'true'
-  );
-
-  if (dismissed) return null;
-
-  // Count today's and upcoming confirmed bookings to calculate real availability
-  const confirmedThisWeek = bookings.filter(b => {
-    if (!b.date) return false;
-    const d = new Date(b.date);
-    const now = new Date();
-    const endOfWeek = new Date(now);
-    endOfWeek.setDate(now.getDate() + 7);
-    return d >= now && d <= endOfWeek && b.status === 'confirmed';
-  }).length;
-
-  const slotsLeft = Math.max(1, 5 - confirmedThisWeek);
-  const isUrgent = slotsLeft <= 2;
-
-  return (
-    <div style={{
-      background: isUrgent
-        ? 'linear-gradient(90deg, #dc2626, #b91c1c)'
-        : 'linear-gradient(90deg, #0f766e, #0284c7)',
-      color: 'white',
-      padding: '10px 20px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '12px',
-      fontSize: '0.88rem',
-      fontWeight: 600,
-      position: 'relative',
-      zIndex: 100
-    }}>
-      <span style={{ fontSize: '1rem' }}>{isUrgent ? '🔥' : '⚡'}</span>
-      <span>
-        {isUrgent
-          ? `Ultimi ${slotsLeft} slot disponibili questa settimana! Non perdere il tuo posto.`
-          : `Questa settimana rimangono solo ${slotsLeft} slot disponibili — prenota ora!`
-        }
-      </span>
-      <a
-        href="#prenotazioni"
-        style={{
-          background: 'rgba(255,255,255,0.2)',
-          border: '1px solid rgba(255,255,255,0.4)',
-          color: 'white', padding: '4px 14px',
-          borderRadius: '9999px', fontSize: '0.8rem',
-          fontWeight: 700, textDecoration: 'none',
-          transition: 'background 0.2s', whiteSpace: 'nowrap'
-        }}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.35)'}
-        onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-      >
-        Prenota →
-      </a>
-      <button
-        onClick={() => {
-          sessionStorage.setItem('webdog_urgency_dismissed', 'true');
-          setDismissed(true);
-        }}
-        aria-label="Chiudi"
-        style={{
-          position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
-          background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)',
-          cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1, padding: '4px'
-        }}
-      >✕</button>
-    </div>
-  );
-}
 
 // ── AnimatedCounters ───────────────────────────────────────────────────────
 function AnimatedCounters({ reviews }) {
