@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://webdog-five.vercel.app/sitemap.xml
+
+# Disallow admin routes (none currently, placeholder for future)
+# Disallow: /admin/

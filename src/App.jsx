@@ -803,26 +803,30 @@ Messaggio: ${contactForm.message}`
 
   const selectedDetails = getSelectedServiceDetails();
 
-  // Generate calendar days for June 2026
-  // June 2026 starts on a Monday (June 1st) and has 30 days.
-  const calendarDays = [];
-  // Seed dates with statuses:
-  // Weekends as Occupied (🔴), Some days as Pending (🟡), others as Available (🟢)
-  for (let d = 1; d <= 30; d++) {
-    const dateStr = `2026-06-${d < 10 ? '0' + d : d}`;
-    let status = 'available';
+  // Dynamic calendar — always shows current month
+  const now = new Date();
+  const calYear = now.getFullYear();
+  const calMonth = now.getMonth();
+  const calDaysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const calMonthName = now.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+  const calMonthNameCapitalized = calMonthName.charAt(0).toUpperCase() + calMonthName.slice(1);
+  const todayDate = now.getDate();
 
-    // Check if there is an actual booking on this day
+  const calendarDays = [];
+  for (let d = 1; d <= calDaysInMonth; d++) {
+    const mm = String(calMonth + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    const dateStr = `${calYear}-${mm}-${dd}`;
+    let status = 'available';
     const bookingOnDay = bookings.find((b) => b.date === dateStr);
     if (bookingOnDay) {
       status = bookingOnDay.status === 'confirmed' ? 'occupied' : 'pending';
     }
-
     calendarDays.push({ dayNum: d, dateStr, status });
   }
 
   const handleCalendarDayClick = (day) => {
-    if (day.dayNum < 15) {
+    if (day.dayNum < todayDate) {
       triggerToast(
         'Data Passata',
         'Non è possibile effettuare prenotazioni retrodatate (prima di oggi).',
@@ -844,7 +848,7 @@ Messaggio: ${contactForm.message}`
     setBookingForm((prev) => ({ ...prev, date: day.dateStr }));
     triggerToast(
       'Data Selezionata',
-      `Hai scelto il ${day.dayNum} Giugno 2026 per il tuo appuntamento.`,
+      `Hai scelto il ${day.dayNum} ${calMonthNameCapitalized} per il tuo appuntamento.`,
       'success',
       'Calendario'
     );
@@ -1029,13 +1033,13 @@ Messaggio: ${contactForm.message}`
             {/* Left Column Text */}
             <div>
               <span className="badge" style={{ marginBottom: '16px' }}>
-                <Sparkles size={14} /> Professionisti al Tuo Servizio
+                <Sparkles size={14} /> Educatore Cinofilo a Napoli e Provincia
               </span>
               <h2 style={{ fontSize: '3.5rem', fontWeight: 800, lineHeight: 1.1, color: '#042f2e', marginBottom: '20px', letterSpacing: '-0.03em' }}>
-                Educazione, Benessere e Cura del Tuo Cane
+                Dog Sitting, Passeggiate ed Educazione a Napoli 🐾
               </h2>
               <p style={{ fontSize: '1.2rem', color: '#334155', marginBottom: '32px', lineHeight: 1.6 }}>
-                Servizi professionali dedicati al mondo cinofilo per accompagnare te e il tuo amico a quattro zampe in ogni esigenza.
+                Servizi cinofili professionali a Napoli e Provincia — dog sitting, passeggiate educative, navetta veterinario ed educazione base con educatore certificato CSEN.
               </p>
 
               <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -1081,7 +1085,7 @@ Messaggio: ${contactForm.message}`
               }} className="floating-icon">
                 <img
                   src="/chi_sono_profile.jpg"
-                  alt="WebDog Professional"
+                  alt="Emanuele Barese — Educatore Cinofilo Certificato CSEN a Napoli"
                   style={{
                     width: '100%',
                     height: '100%',
@@ -1135,7 +1139,14 @@ Messaggio: ${contactForm.message}`
         </div>
       </section>
 
+      {/* -------------------- URGENCY BANNER -------------------- */}
+      <UrgencyBanner bookings={bookings} />
+
+      {/* -------------------- COUNTER STATS -------------------- */}
+      <AnimatedCounters reviews={reviews} />
+
       {/* -------------------- SEZIONE VANTAGGI -------------------- */}
+
       <section style={{ padding: '60px 0', background: 'white' }}>
         <div className="container">
           <div style={{
@@ -1252,7 +1263,7 @@ Messaggio: ${contactForm.message}`
               }}>
                 <img
                   src="/chi_sono_profile.jpg"
-                  alt="Chi Sono Professional Trainer"
+                  alt="Emanuele Barese — Educatore Cinofilo a Napoli e Provincia"
                   style={{ width: '100%', height: 'auto', display: 'block' }}
                 />
               </div>
@@ -1396,6 +1407,7 @@ Messaggio: ${contactForm.message}`
           </div>
         </div>
       </section>
+
 
       {/* -------------------- SERVIZI (SERVICES) -------------------- */}
       <section id="servizi" className="section-padding" style={{ background: 'white' }}>
@@ -1631,7 +1643,7 @@ Messaggio: ${contactForm.message}`
             <div className="glass-panel" style={{ padding: '24px' }}>
               <div className="calendar-container">
                 <div className="calendar-header">
-                  <h4 style={{ fontWeight: 800, fontSize: '1.1rem', color: '#0f2d2a' }}>Giugno 2026</h4>
+                  <h4 style={{ fontWeight: 800, fontSize: '1.1rem', color: '#0f2d2a' }}>{calMonthNameCapitalized}</h4>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><ChevronLeft size={20} /></button>
                     <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><ChevronRight size={20} /></button>
@@ -1650,9 +1662,9 @@ Messaggio: ${contactForm.message}`
                       key={day.dayNum}
                       onClick={() => handleCalendarDayClick(day)}
                       className={`calendar-cell ${selectedCalendarDay === day.dayNum ? 'selected' : ''}`}
-                      style={{ 
-                        opacity: day.dayNum < 15 ? 0.4 : 1, 
-                        cursor: day.dayNum < 15 ? 'not-allowed' : 'pointer' 
+                      style={{
+                        opacity: day.dayNum < todayDate ? 0.4 : 1,
+                        cursor: day.dayNum < todayDate ? 'not-allowed' : 'pointer'
                       }}
                     >
                       <span className="calendar-cell-num">{day.dayNum}</span>
@@ -2255,7 +2267,137 @@ Messaggio: ${contactForm.message}`
         </div>
       )}
 
+
+      {/* -------------------- ZONE SERVITE -------------------- */}
+      <section style={{ background: 'white', padding: '64px 0' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span className="badge">📍 COPERTURA TERRITORIALE</span>
+            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Zone Servite — 35 km da Arzano</h2>
+            <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: '680px', margin: '8px auto 0 auto' }}>
+              Con base ad <strong style={{ color: '#0f766e' }}>Arzano (NA)</strong>, copriamo <strong style={{ color: '#0f766e' }}>58 comuni</strong> di Napoli e Provincia in un raggio di 35 km — dall'area flegrea alla penisola sorrentina, dal Vesuvio all'area nolana.
+            </p>
+          </div>
+
+          {/* Epicenter badge */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '36px' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '12px',
+              background: 'linear-gradient(135deg, #f0fdfa, #e0f2fe)',
+              border: '2px solid rgba(15,118,110,0.25)',
+              borderRadius: '16px', padding: '14px 28px',
+              boxShadow: '0 4px 16px rgba(15,118,110,0.1)'
+            }}>
+              <span style={{ fontSize: '1.8rem' }}>📍</span>
+              <div>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#042f2e' }}>Arzano (NA) — Base Operativa</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>58 comuni coperti · Raggio 35 km · Napoli e Provincia</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Grouped areas */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {[
+              {
+                area: '⭐ Area Nord — Immediata (Base)',
+                color: '#0f766e', bg: '#f0fdfa',
+                cities: ['Arzano', 'Casoria', 'Casavatore', 'Afragola', 'Frattamaggiore', 'Frattaminore', 'Cardito', 'Caivano', 'Crispano', 'Grumo Nevano', "Sant'Antimo", 'Melito di Napoli', 'Casandrino', 'Mugnano di Napoli', 'Calvizzano']
+              },
+              {
+                area: '🏙️ Napoli Città',
+                color: '#1d4ed8', bg: '#eff6ff',
+                cities: ['Napoli (tutti i quartieri)']
+              },
+              {
+                area: '🌊 Area Flegrea & Ovest',
+                color: '#0369a1', bg: '#f0f9ff',
+                cities: ['Giugliano in Campania', 'Qualiano', 'Villaricca', 'Marano di Napoli', 'Pozzuoli', 'Bacoli', 'Monte di Procida', 'Quarto']
+              },
+              {
+                area: '🏭 Area Est & Nolana',
+                color: '#7c3aed', bg: '#faf5ff',
+                cities: ['Acerra', 'Casalnuovo di Napoli', "Pomigliano d'Arco", 'Marigliano', 'Mariglianella', 'Brusciano', 'Nola', 'Carbonara di Nola', 'Cicciano', 'Scisciano', 'San Vitaliano', 'San Paolo Bel Sito', 'San Gennaro Vesuviano', 'San Giuseppe Vesuviano', 'Saviano', 'Ottaviano']
+              },
+              {
+                area: '🌋 Area Vesuviana',
+                color: '#b45309', bg: '#fffbeb',
+                cities: ['Portici', 'San Giorgio a Cremano', 'San Sebastiano al Vesuvio', 'Ercolano', 'Cercola', 'Volla', 'Pollena Trocchia', "Sant'Anastasia", 'Somma Vesuviana', 'Torre del Greco', 'Torre Annunziata', 'Boscoreale', 'Boscotrecase', 'Trecase', 'Terzigno', 'Poggiomarino']
+              },
+              {
+                area: '⛵ Area Sud & Sorrentina',
+                color: '#be185d', bg: '#fdf2f8',
+                cities: ['Agerola', "Sant'Agnello"]
+              },
+            ].map(({ area, color, bg, cities }) => (
+              <div key={area} style={{ background: bg, borderRadius: '16px', padding: '20px 24px', border: `1px solid ${color}22` }}>
+                <h3 style={{ fontWeight: 800, fontSize: '0.95rem', color, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {area}
+                </h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {cities.map(city => (
+                    <span key={city} style={{
+                      background: 'white',
+                      border: `1px solid ${color}33`,
+                      color: '#334155',
+                      padding: '4px 12px',
+                      borderRadius: '9999px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                    }}>
+                      {city}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '16px' }}>
+              Non trovi il tuo comune? Contattaci — valutiamo sempre ogni richiesta!
+            </p>
+            <a href="https://wa.me/393467251989" className="btn btn-primary" style={{ gap: '8px' }}>
+              💬 Chiedi disponibilità su WhatsApp
+            </a>
+          </div>
+        </div>
+      </section>
+
+
+      {/* -------------------- FAQ -------------------- */}
+      <section style={{ background: '#f0fdfa', padding: '80px 0' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <span className="badge">❓ DOMANDE FREQUENTI</span>
+            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Hai Domande? Abbiamo le Risposte</h2>
+            <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: '560px', margin: '8px auto 0 auto' }}>
+              Tutto quello che devi sapere prima di prenotare un servizio WebDog a Napoli e Provincia.
+            </p>
+          </div>
+          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {[
+              { q: 'Quanto costa il dog sitting a Napoli?', a: 'Il dog sitting diurno parte da €20 a mezza giornata presso il tuo domicilio, o €25 presso casa nostra. Il pernottamento (pensione) è da €35 a notte. Ogni servizio è personalizzabile in base alle tue esigenze.' },
+              { q: 'Quali zone di Napoli coprite?', a: 'Con base ad Arzano (NA), opero in un raggio di 35 km che copre tutta Napoli e provincia: Casoria, Afragola, Frattamaggiore, Giugliano, Acerra, Aversa, Pozzuoli, Portici, Ercolano, Torre del Greco, Nola, Caserta, Pompei e Castellammare di Stabia. Per qualsiasi altro comune contattaci direttamente.' },
+              { q: 'Come faccio a prenotare?', a: 'Puoi prenotare direttamente dal sito cliccando "Prenota Ora", selezionando un giorno verde disponibile nel calendario e compilando il modulo. Riceverai conferma via email e verrai contattato entro 24 ore.' },
+              { q: 'Emanuele è un educatore certificato?', a: 'Sì! Emanuele Barese è Educatore Cinofilo Certificato CSEN (Iscrizione Albo Nazionale n. 42081, riconosciuto CONI) e usa esclusivamente metodi basati sul rinforzo positivo, senza coercizione.' },
+              { q: 'Gestite anche cuccioli?', a: 'Certo! Gestiamo cuccioli di tutte le età. Offriamo sessioni specifiche di Puppy Class per cuccioli dai 3 ai 6 mesi, fondamentali per la socializzazione precoce e la prevenzione di problemi comportamentali.' },
+              { q: 'Fate il servizio navetta ?', a: 'Sì, il Servizio Navetta è disponibile per trasportare il tuo cane in sicurezza presso veterinari, toelettatori o centri specializzati a Napoli e Provincia. Il prezzo parte da €15.' },
+            ].map(({ q, a }, idx) => (
+              <div key={idx} className="glass-card" style={{ padding: '20px 24px' }}>
+                <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#042f2e', marginBottom: '8px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ color: '#0f766e', flexShrink: 0 }}>Q.</span> {q}
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.65, margin: 0, paddingLeft: '22px' }}>{a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* -------------------- CONTATTI & MAPPA (CONTACTS) -------------------- */}
+
       <section id="contatti" className="section-padding" style={{ background: 'white' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
@@ -2443,68 +2585,168 @@ Messaggio: ${contactForm.message}`
       </section>
 
       {/* -------------------- FOOTER -------------------- */}
-      <footer style={{ background: '#042f2e', color: 'white', padding: '48px 0 24px 0' }}>
+      <footer style={{ background: '#042f2e', color: 'white', padding: '56px 0 24px 0' }}>
         <div className="container">
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '32px',
+            gap: '36px',
             marginBottom: '40px'
           }}>
+            {/* Brand + Social */}
             <div>
-              <h4 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: '16px' }}>🐾 WebDog</h4>
-              <p style={{ fontSize: '0.8rem', color: '#99f6e4', lineHeight: 1.6 }}>
-                Educazione, custodia e trasporto dedicati al benessere dei cani. Soluzioni professionali su misura dei proprietari.
+              <h4 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: '8px' }}>🐾 WebDog Napoli</h4>
+              <p style={{ fontSize: '0.8rem', color: '#99f6e4', lineHeight: 1.6, marginBottom: '20px' }}>
+                Educatore cinofilo certificato CSEN a Napoli e Provincia. Dog sitting, passeggiate, navetta ed educazione base con amore.
               </p>
+              {/* ── Social Links ── inserisci i tuoi URL nei commenti ── */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[
+                  {
+                    label: '📸 Instagram',
+                    /* ← SOSTITUIRE con il tuo link Instagram, es: https://www.instagram.com/webdog.napoli */
+                    href: 'https://www.instagram.com/',
+                    hoverBg: 'rgba(225,48,108,0.35)'
+                  },
+                  {
+                    label: '👍 Facebook',
+                    /* ← SOSTITUIRE con la tua pagina Facebook, es: https://www.facebook.com/webdognapoli */
+                    href: 'https://www.facebook.com/',
+                    hoverBg: 'rgba(24,119,242,0.35)'
+                  },
+                  {
+                    label: '🎵 TikTok',
+                    /* ← SOSTITUIRE con il tuo profilo TikTok, es: https://www.tiktok.com/@webdognapoli */
+                    href: 'https://www.tiktok.com/',
+                    hoverBg: 'rgba(255,255,255,0.2)'
+                  }
+                ].map(({ label, href, hoverBg }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '5px',
+                      background: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      color: '#f0fdfa', padding: '6px 12px',
+                      borderRadius: '8px', fontSize: '0.78rem',
+                      fontWeight: 700, textDecoration: 'none',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = hoverBg}
+                    onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
             </div>
 
+            {/* Quick links */}
             <div>
               <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Link Rapidi</h5>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
-                <li><a href="#home" style={{ color: '#99f6e4', textDecoration: 'none' }}>Home</a></li>
-                <li><a href="#about" style={{ color: '#99f6e4', textDecoration: 'none' }}>Chi Sono</a></li>
-                <li><a href="#servizi" style={{ color: '#99f6e4', textDecoration: 'none' }}>Servizi</a></li>
-                <li><a href="#prenotazioni" style={{ color: '#99f6e4', textDecoration: 'none' }}>Prenotazioni</a></li>
+                <li><a href="#home" style={{ color: '#99f6e4', textDecoration: 'none' }}>🏠 Home</a></li>
+                <li><a href="#about" style={{ color: '#99f6e4', textDecoration: 'none' }}>👤 Chi Sono</a></li>
+                <li><a href="#servizi" style={{ color: '#99f6e4', textDecoration: 'none' }}>🐾 Servizi</a></li>
+                <li><a href="#prenotazioni" style={{ color: '#99f6e4', textDecoration: 'none' }}>📅 Prenotazioni</a></li>
+                <li><a href="#recensioni" style={{ color: '#99f6e4', textDecoration: 'none' }}>⭐ Recensioni</a></li>
+                <li><a href="#contatti" style={{ color: '#99f6e4', textDecoration: 'none' }}>📞 Contatti</a></li>
               </ul>
             </div>
 
+            {/* Orari */}
             <div>
               <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Orari Servizi</h5>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', color: '#99f6e4' }}>
-                <li>Lunedì - Venerdì: 08:00 - 20:00</li>
-                <li>Sabato: 09:00 - 18:00</li>
-                <li>Domenica: Riposo</li>
+                <li>Lunedì - Venerdì: 08:00 – 20:00</li>
+                <li>Sabato: 09:00 – 18:00</li>
+                <li>Domenica: Su prenotazione</li>
               </ul>
+              <p style={{ fontSize: '0.75rem', color: '#5eead4', marginTop: '14px' }}>
+                📍 Napoli e Provincia
+              </p>
+              <a
+                href="tel:+393467251989"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '10px', color: '#2dd4bf', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none' }}
+              >
+                📞 +39 346 7251989
+              </a>
             </div>
 
+            {/* Note legali */}
             <div>
               <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Note Legali</h5>
-              <p style={{ fontSize: '0.75rem', color: '#5eead4', lineHeight: 1.5 }}>
-                WebDog di Emanuele Barese P.IVA 01234567890 • Tutti i diritti riservati • Assicurazione Professionale Allianz RC n. 981245.
+              <p style={{ fontSize: '0.75rem', color: '#5eead4', lineHeight: 1.6 }}>
+                WebDog di Emanuele Barese<br />
+                Assicurazione RC Professionale<br />
+                Educatore CSEN Albo n. 42081
               </p>
+              <a
+                href="https://business.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-block', marginTop: '12px', fontSize: '0.72rem', color: '#2dd4bf', textDecoration: 'underline' }}
+              >
+                ⭐ Lascia una recensione su Google
+              </a>
             </div>
           </div>
 
           <div style={{
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
             paddingTop: '24px',
             textAlign: 'center',
-            fontSize: '0.8rem',
+            fontSize: '0.78rem',
             color: '#5eead4'
           }}>
-            © 2026 WebDog. Sviluppato con amore cinofilo e cura professionale.
+            © 2026 WebDog Napoli · Tutti i diritti riservati · Sviluppato con amore cinofilo 🐾
           </div>
         </div>
       </footer>
 
-      {/* Floating quick shortcut toggle button for Admin Mode */}
-      <button
-        onClick={() => setViewMode('admin')}
-        className="admin-badge-toggle"
-        title="Clicca per aprire la dashboard gestionale amministratore"
+      {/* ── WHATSAPP FLOATING ACTION BUTTON ─────────────────── */}
+      <a
+        href="https://wa.me/393467251989?text=Ciao%20Emanuele!%20Ho%20visto%20il%20sito%20WebDog%20e%20vorrei%20informazioni%20sui%20servizi."
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Chatta su WhatsApp"
+        title="Scrivici su WhatsApp"
+        style={{
+          position: 'fixed',
+          bottom: '28px',
+          right: '28px',
+          zIndex: 1050,
+          width: '60px',
+          height: '60px',
+          borderRadius: '50%',
+          background: '#25D366',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 8px 24px rgba(37,211,102,0.45)',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+          textDecoration: 'none'
+        }}
+        onMouseOver={e => {
+          e.currentTarget.style.transform = 'scale(1.12)';
+          e.currentTarget.style.boxShadow = '0 12px 32px rgba(37,211,102,0.6)';
+        }}
+        onMouseOut={e => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(37,211,102,0.45)';
+        }}
       >
-        <Eye size={16} /> <span>Operatore Dashboard</span>
-      </button>
+        {/* WhatsApp SVG icon */}
+        <svg width="30" height="30" viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 2C8.268 2 2 8.268 2 16c0 2.46.644 4.766 1.77 6.77L2 30l7.43-1.746A13.93 13.93 0 0016 30c7.732 0 14-6.268 14-14S23.732 2 16 2zm0 25.6a11.55 11.55 0 01-5.88-1.604l-.42-.25-4.41 1.037 1.057-4.303-.274-.44A11.558 11.558 0 014.4 16C4.4 9.592 9.592 4.4 16 4.4S27.6 9.592 27.6 16 22.408 27.6 16 27.6zm6.39-8.67c-.35-.174-2.07-1.02-2.39-1.137-.32-.116-.553-.174-.785.174-.233.347-.9 1.137-1.103 1.37-.203.232-.406.26-.756.087-.35-.174-1.478-.545-2.815-1.738-1.04-.928-1.742-2.074-1.946-2.423-.203-.348-.022-.537.152-.71.157-.156.35-.406.524-.61.175-.202.233-.347.35-.578.116-.232.058-.434-.029-.61-.087-.174-.785-1.892-1.075-2.59-.283-.682-.57-.59-.785-.6l-.669-.012c-.232 0-.61.087-.928.434-.319.348-1.218 1.19-1.218 2.9 0 1.71 1.247 3.363 1.421 3.596.174.232 2.454 3.747 5.948 5.256.832.36 1.481.574 1.987.734.834.267 1.594.229 2.195.139.67-.1 2.07-.847 2.362-1.664.29-.817.29-1.517.203-1.664-.087-.145-.32-.232-.669-.406z"/>
+        </svg>
+      </a>
+
+      {/* ── COOKIE BANNER (GDPR + Italian Cookie Law) ────────── */}
+      <CookieBanner />
 
       {/* EMAIL / MESSAGE SUBMISSION MODAL */}
       {emailModalData !== null && (
@@ -2518,6 +2760,301 @@ Messaggio: ${contactForm.message}`
 
       {/* REAL-TIME NOTIFICATION MANAGER STACK */}
       <NotificationToast toasts={toasts} removeToast={removeToast} />
+    </div>
+  );
+}
+
+// ── UrgencyBanner ─────────────────────────────────────────────────────────
+function UrgencyBanner({ bookings }) {
+  const [dismissed, setDismissed] = React.useState(
+    () => sessionStorage.getItem('webdog_urgency_dismissed') === 'true'
+  );
+
+  if (dismissed) return null;
+
+  // Count today's and upcoming confirmed bookings to calculate real availability
+  const confirmedThisWeek = bookings.filter(b => {
+    if (!b.date) return false;
+    const d = new Date(b.date);
+    const now = new Date();
+    const endOfWeek = new Date(now);
+    endOfWeek.setDate(now.getDate() + 7);
+    return d >= now && d <= endOfWeek && b.status === 'confirmed';
+  }).length;
+
+  const slotsLeft = Math.max(1, 5 - confirmedThisWeek);
+  const isUrgent = slotsLeft <= 2;
+
+  return (
+    <div style={{
+      background: isUrgent
+        ? 'linear-gradient(90deg, #dc2626, #b91c1c)'
+        : 'linear-gradient(90deg, #0f766e, #0284c7)',
+      color: 'white',
+      padding: '10px 20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '12px',
+      fontSize: '0.88rem',
+      fontWeight: 600,
+      position: 'relative',
+      zIndex: 100
+    }}>
+      <span style={{ fontSize: '1rem' }}>{isUrgent ? '🔥' : '⚡'}</span>
+      <span>
+        {isUrgent
+          ? `Ultimi ${slotsLeft} slot disponibili questa settimana! Non perdere il tuo posto.`
+          : `Questa settimana rimangono solo ${slotsLeft} slot disponibili — prenota ora!`
+        }
+      </span>
+      <a
+        href="#prenotazioni"
+        style={{
+          background: 'rgba(255,255,255,0.2)',
+          border: '1px solid rgba(255,255,255,0.4)',
+          color: 'white', padding: '4px 14px',
+          borderRadius: '9999px', fontSize: '0.8rem',
+          fontWeight: 700, textDecoration: 'none',
+          transition: 'background 0.2s', whiteSpace: 'nowrap'
+        }}
+        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.35)'}
+        onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+      >
+        Prenota →
+      </a>
+      <button
+        onClick={() => {
+          sessionStorage.setItem('webdog_urgency_dismissed', 'true');
+          setDismissed(true);
+        }}
+        aria-label="Chiudi"
+        style={{
+          position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)',
+          background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)',
+          cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1, padding: '4px'
+        }}
+      >✕</button>
+    </div>
+  );
+}
+
+// ── AnimatedCounters ───────────────────────────────────────────────────────
+function AnimatedCounters({ reviews }) {
+  const ref = React.useRef(null);
+  const [started, setStarted] = React.useState(false);
+  const [counts, setCounts] = React.useState({ comuni: 0, clienti: 0, stelle: 0, anni: 0 });
+
+  const targets = {
+    comuni: 58,
+    clienti: 100,
+    stelle: 5,
+    anni: 3
+  };
+
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setStarted(true); },
+      { threshold: 0.4 }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!started) return;
+    const duration = 1800;
+    const steps = 60;
+    const interval = duration / steps;
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      const progress = Math.min(step / steps, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      setCounts({
+        comuni: Math.round(targets.comuni * ease),
+        clienti: Math.round(targets.clienti * ease),
+        stelle: Math.round(targets.stelle * ease * 10) / 10,
+        anni: Math.round(targets.anni * ease)
+      });
+      if (step >= steps) clearInterval(timer);
+    }, interval);
+    return () => clearInterval(timer);
+  }, [started]);
+
+  const stats = [
+    { value: counts.comuni, suffix: '', label: 'Comuni Coperti', icon: '📍', sub: 'Napoli e Provincia' },
+    { value: counts.clienti, suffix: '+', label: 'Clienti Soddisfatti', icon: '❤️', sub: '100% recensioni positive' },
+    { value: counts.stelle, suffix: '★', label: 'Valutazione Media', icon: '⭐', sub: 'Su Google e Facebook' },
+    { value: counts.anni, suffix: '+', label: 'Anni di Esperienza', icon: '🎓', sub: 'Certificato CSEN' },
+  ];
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        background: 'linear-gradient(135deg, #042f2e 0%, #0c4a6e 100%)',
+        padding: '48px 0'
+      }}
+    >
+      <div className="container">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '32px',
+          textAlign: 'center'
+        }}>
+          {stats.map(({ value, suffix, label, icon, sub }) => (
+            <div key={label} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px'
+            }}>
+              <span style={{ fontSize: '2rem' }}>{icon}</span>
+              <div style={{
+                fontWeight: 900,
+                fontSize: '2.8rem',
+                color: '#2dd4bf',
+                lineHeight: 1,
+                letterSpacing: '-0.03em',
+                fontVariantNumeric: 'tabular-nums'
+              }}>
+                {value}{suffix}
+              </div>
+              <p style={{ margin: 0, fontWeight: 700, color: '#f0fdfa', fontSize: '0.95rem' }}>{label}</p>
+              <p style={{ margin: 0, color: '#5eead4', fontSize: '0.75rem' }}>{sub}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Admin floating toggle (restored) ──────────────────────────────────────
+function AdminToggle({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="admin-badge-toggle"
+      title="Clicca per aprire la dashboard gestionale amministratore"
+    >
+      <Eye size={16} /> <span>Operatore Dashboard</span>
+    </button>
+  );
+}
+
+// ── CookieBanner — GDPR + Italian Cookie Law ───────────────────────────────
+const GA4_ID = 'G-XXXXXXXXXX'; // ← SOSTITUIRE con il tuo Google Analytics 4 Measurement ID
+
+function CookieBanner() {
+  const STORAGE_KEY = 'webdog_cookie_consent';
+  const [visible, setVisible] = React.useState(() => !localStorage.getItem(STORAGE_KEY));
+  const [showDetails, setShowDetails] = React.useState(false);
+
+  const loadGA4 = () => {
+    if (GA4_ID === 'G-XXXXXXXXXX') return; // skip if not configured
+    if (document.getElementById('ga4-script')) return; // already loaded
+    const s = document.createElement('script');
+    s.id = 'ga4-script';
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA4_ID, { anonymize_ip: true });
+  };
+
+  const handleAccept = () => {
+    localStorage.setItem(STORAGE_KEY, 'accepted');
+    setVisible(false);
+    loadGA4();
+  };
+
+  const handleReject = () => {
+    localStorage.setItem(STORAGE_KEY, 'rejected');
+    setVisible(false);
+  };
+
+  // Auto-load GA4 if already accepted
+  React.useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEY) === 'accepted') loadGA4();
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: 0, left: 0, right: 0,
+      zIndex: 9000,
+      background: 'rgba(4, 47, 46, 0.97)',
+      backdropFilter: 'blur(12px)',
+      borderTop: '1px solid rgba(45,212,191,0.2)',
+      padding: '20px 24px',
+      animation: 'slideInUp 0.4s cubic-bezier(0.16,1,0.3,1)'
+    }}>
+      <style>{`
+        @keyframes slideInUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px' }}>
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: '260px' }}>
+          <p style={{ margin: '0 0 4px 0', fontWeight: 700, color: '#f0fdfa', fontSize: '0.95rem' }}>
+            🍪 Questo sito usa i cookie
+          </p>
+          <p style={{ margin: 0, fontSize: '0.82rem', color: '#99f6e4', lineHeight: 1.5 }}>
+            Utilizziamo cookie tecnici necessari e, con il tuo consenso, cookie analitici (Google Analytics) per migliorare l'esperienza e le prestazioni del sito.
+            {' '}
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              style={{ background: 'none', border: 'none', color: '#2dd4bf', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.82rem', padding: 0 }}
+            >
+              {showDetails ? 'Mostra meno ▲' : 'Maggiori informazioni ▼'}
+            </button>
+          </p>
+          {showDetails && (
+            <div style={{ marginTop: '10px', fontSize: '0.78rem', color: '#5eead4', lineHeight: 1.6, background: 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '8px' }}>
+              <p style={{ margin: '0 0 6px 0' }}><strong style={{ color: '#f0fdfa' }}>Cookie tecnici</strong> — Necessari al funzionamento del sito (prenotazioni, sessione). Non richiedono consenso.</p>
+              <p style={{ margin: 0 }}><strong style={{ color: '#f0fdfa' }}>Cookie analitici</strong> — Google Analytics 4 (con IP anonimizzato). Ci permettono di capire come gli utenti navigano il sito. Attivati solo con il tuo consenso.</p>
+            </div>
+          )}
+        </div>
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: '10px', flexShrink: 0, flexWrap: 'wrap' }}>
+          <button
+            onClick={handleReject}
+            style={{
+              background: 'transparent', border: '1px solid rgba(45,212,191,0.4)',
+              color: '#99f6e4', padding: '9px 20px', borderRadius: '8px',
+              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={e => e.currentTarget.style.borderColor = '#2dd4bf'}
+            onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(45,212,191,0.4)'}
+          >
+            Solo necessari
+          </button>
+          <button
+            onClick={handleAccept}
+            style={{
+              background: '#10b981', border: 'none',
+              color: 'white', padding: '9px 24px', borderRadius: '8px',
+              fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(16,185,129,0.35)',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={e => e.currentTarget.style.background = '#059669'}
+            onMouseOut={e => e.currentTarget.style.background = '#10b981'}
+          >
+            Accetta tutti ✓
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,15 +2,124 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Sito professionale di servizi cinofili dedicati al benessere dei cani. Passeggiate educative, dog sitting diurno e notturno, servizio navetta ed educazione base a Firenze." />
-    <meta name="keywords" content="educatore cinofilo, dog sitting diurno, dog sitting notturno, navetta cane, educazione base cane, firenze cinofila" />
-    <meta name="author" content="Emanuele Barese - WebDog" />
-    <title>WebDog | Educazione, Benessere e Cura del Tuo Cane</title>
+
+    <!-- ══ SEO PRIMARY ══════════════════════════════════════════ -->
+    <title>WebDog Napoli | Educatore Cinofilo, Dog Sitting, Dog Walker — Napoli e Provincia</title>
+    <meta name="description" content="Educatore cinofilo certificato CSEN a Napoli e Provincia. Passeggiate educative, dog sitting diurno e notturno, servizio navetta e educazione base. Prenota online in un click!" />
+    <meta name="keywords" content="educatore cinofilo napoli, dog sitting napoli, dog sitter napoli, dog walker napoli, passeggiata cani napoli, educazione cane napoli, dog walking campania, dog sitter arzano, dog sitter afragola, dog sitter casoria, dog sitter frattamaggiore, dog sitter giugliano, dog sitter aversa, dog sitter acerra, dog sitter pozzuoli, dog sitter portici, dog sitter ercolano, dog sitter torre del greco, dog sitter nola, dog sitter caserta, dog sitter pompei, dog sitter castellammare, pet sitter napoli, educazione cinofila napoli, webdog napoli, webdog arzano" />
+    <meta name="author" content="Emanuele Barese — WebDog Napoli" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://webdog-five.vercel.app/" />
+
+    <!-- ══ OPEN GRAPH — Facebook / Instagram / WhatsApp preview ═ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://webdog-five.vercel.app/" />
+    <meta property="og:title" content="WebDog Napoli — Educatore Cinofilo & Dog Sitter" />
+    <meta property="og:description" content="Passeggiate educative, dog sitting, navetta e educazione base a Napoli e Provincia. Prenota online!" />
+    <meta property="og:image" content="https://webdog-five.vercel.app/chi_sono_profile.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="it_IT" />
+    <meta property="og:site_name" content="WebDog Napoli" />
+
+    <!-- ══ TWITTER CARD ══════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="WebDog Napoli — Educatore Cinofilo & Dog Sitter" />
+    <meta name="twitter:description" content="Passeggiate educative, dog sitting, navetta e educazione base a Napoli e Provincia. Prenota online!" />
+    <meta name="twitter:image" content="https://webdog-five.vercel.app/chi_sono_profile.jpg" />
+
+    <!-- ══ SCHEMA.ORG — LocalBusiness (Google Maps / Local Pack) ═ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "WebDog — Educatore Cinofilo Napoli",
+      "description": "Servizi cinofili professionali a Napoli e Provincia: passeggiate educative, dog sitting diurno e notturno, servizio navetta per veterinario e toelettatura, educazione base e consulenza pre-adozione.",
+      "url": "https://webdog-five.vercel.app",
+      "telephone": "+393467251989",
+      "email": "info@webdog.it",
+      "image": "https://webdog-five.vercel.app/chi_sono_profile.jpg",
+      "priceRange": "€15–€250",
+      "currenciesAccepted": "EUR",
+      "paymentAccepted": "Cash, PayPal, Revolut, IBAN",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Arzano",
+        "addressLocality": "Arzano",
+        "postalCode": "80022",
+        "addressRegion": "NA",
+        "addressCountry": "IT"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 40.9106,
+        "longitude": 14.2706
+      },
+      "areaServed": [
+        "Arzano", "Napoli", "Acerra", "Afragola", "Agerola",
+        "Bacoli", "Boscoreale", "Boscotrecase", "Brusciano",
+        "Caivano", "Calvizzano", "Carbonara di Nola", "Cardito",
+        "Casalnuovo di Napoli", "Casandrino", "Casavatore", "Casoria",
+        "Cercola", "Cicciano", "Crispano",
+        "Ercolano", "Frattamaggiore", "Frattaminore",
+        "Giugliano in Campania", "Grumo Nevano",
+        "Marano di Napoli", "Mariglianella", "Marigliano", "Melito di Napoli",
+        "Monte di Procida", "Mugnano di Napoli",
+        "Nola", "Ottaviano", "Poggiomarino", "Pollena Trocchia",
+        "Pomigliano d'Arco", "Portici", "Pozzuoli", "Qualiano", "Quarto",
+        "San Gennaro Vesuviano", "San Giorgio a Cremano", "San Giuseppe Vesuviano",
+        "San Paolo Bel Sito", "San Sebastiano al Vesuvio", "San Vitaliano",
+        "Sant'Agnello", "Sant'Anastasia", "Sant'Antimo",
+        "Saviano", "Scisciano", "Somma Vesuviana",
+        "Terzigno", "Torre Annunziata", "Torre del Greco", "Trecase",
+        "Villaricca", "Volla"
+      ],
+      "openingHoursSpecification": [
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "08:00", "closes": "20:00" },
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Saturday"], "opens": "09:00", "closes": "18:00" }
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Servizi Cinofili WebDog",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Dog Walking Napoli", "description": "Passeggiate educative 30 e 60 minuti a Napoli e Provincia" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Dog Sitting Napoli", "description": "Custodia diurna e notturna del cane a Napoli" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Educazione Cinofila Napoli", "description": "Sessioni di educazione base con educatore certificato CSEN" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Navetta Veterinario Napoli", "description": "Trasporto professionale del cane al veterinario o toelettatura" } }
+        ]
+      },
+      "founder": {
+        "@type": "Person",
+        "name": "Emanuele Barese",
+        "jobTitle": "Educatore Cinofilo Certificato CSEN",
+        "telephone": "+393467251989"
+      }
+    }
+    </script>
+
+    <!-- ══ GOOGLE FONTS ══════════════════════════════════════════ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- ══ GOOGLE ANALYTICS 4 ════════════════════════════════════ -->
+    <!-- ⚠️  SOSTITUIRE G-XXXXXXXXXX con il tuo Measurement ID reale  -->
+    <!-- Ottienilo su: analytics.google.com → Proprietà → Flussi dati -->
+    <!-- Il tracking si attiva automaticamente solo dopo il consenso   -->
+    <!-- cookie dell'utente (gestito dal CookieBanner in App.jsx)      -->
+    <!--
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX', { anonymize_ip: true });
+    </script>
+    -->
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+

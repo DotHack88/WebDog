@@ -13,19 +13,19 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  apiKey:            "AIzaSyDLgK3NAYMAVN8vOR0Xts85PmKGSl7JliI",
-  authDomain:        "webdog-bookings.firebaseapp.com",
-  databaseURL:       "https://webdog-bookings-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:         "webdog-bookings",
-  storageBucket:     "webdog-bookings.firebasestorage.app",
+  apiKey: "AIzaSyDLgK3NAYMAVN8vOR0Xts85PmKGSl7JliI",
+  authDomain: "webdog-bookings.firebaseapp.com",
+  databaseURL: "https://webdog-bookings-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "webdog-bookings",
+  storageBucket: "webdog-bookings.firebasestorage.app",
   messagingSenderId: "920474613807",
-  appId:             "1:920474613807:web:3a800e7fbde166d71d2eda"
+  appId: "1:920474613807:web:3a800e7fbde166d71d2eda"
 };
 
 // ─── Auto-detect if config has been filled in ──────────────
 export const FIREBASE_CONFIGURED =
-  firebaseConfig.apiKey !== 'YOUR_API_KEY' &&
-  firebaseConfig.databaseURL !== 'https://YOUR_PROJECT_ID-default-rtdb.europe-west1.firebasedatabase.app';
+  firebaseConfig.apiKey !== 'AIzaSyDLgK3NAYMAVN8vOR0Xts85PmKGSl7JliI' &&
+  firebaseConfig.databaseURL !== 'https://webdog-bookings-default-rtdb.europe-west1.firebasedatabase.app';
 
 let app = null;
 let database = null;
