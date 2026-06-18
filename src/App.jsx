@@ -2275,7 +2275,7 @@ Messaggio: ${contactForm.message}`
             <span className="badge">📍 COPERTURA TERRITORIALE</span>
             <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Zone Servite — 35 km da Arzano</h2>
             <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: '680px', margin: '8px auto 0 auto' }}>
-              Con base ad <strong style={{ color: '#0f766e' }}>Arzano (NA)</strong>, copriamo <strong style={{ color: '#0f766e' }}>58 comuni</strong> di Napoli e Provincia in un raggio di 35 km — dall'area flegrea alla penisola sorrentina, dal Vesuvio all'area nolana.
+              Con base ad <strong style={{ color: '#0f766e' }}>Arzano (NA)</strong>, copriamo <strong style={{ color: '#0f766e' }}>55 comuni</strong> di Napoli e Provincia in un raggio di 35 km — dall'area flegrea e casertana al Vesuvio e all'area nolana.
             </p>
           </div>
 
@@ -2291,7 +2291,7 @@ Messaggio: ${contactForm.message}`
               <span style={{ fontSize: '1.8rem' }}>📍</span>
               <div>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#042f2e' }}>Arzano (NA) — Base Operativa</p>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>58 comuni coperti · Raggio 35 km · Napoli e Provincia</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>55 comuni coperti · Raggio 35 km · Napoli e Provincia</p>
               </div>
             </div>
           </div>
@@ -2302,7 +2302,7 @@ Messaggio: ${contactForm.message}`
               {
                 area: '⭐ Area Nord — Immediata (Base)',
                 color: '#0f766e', bg: '#f0fdfa',
-                cities: ['Arzano', 'Casoria', 'Casavatore', 'Afragola', 'Frattamaggiore', 'Frattaminore', 'Cardito', 'Caivano', 'Crispano', 'Grumo Nevano', "Sant'Antimo", 'Melito di Napoli', 'Casandrino', 'Mugnano di Napoli', 'Calvizzano']
+                cities: ['Arzano', 'Frattamaggiore', 'Frattaminore', 'Aversa', 'Casoria', 'Casavatore', 'Afragola', 'Cardito', 'Caivano', 'Crispano', 'Grumo Nevano', "Sant'Antimo", 'Melito di Napoli', 'Casandrino', 'Mugnano di Napoli', 'Calvizzano', 'Napoli']
               },
               {
                 area: '🏙️ Napoli Città',
@@ -2312,22 +2312,17 @@ Messaggio: ${contactForm.message}`
               {
                 area: '🌊 Area Flegrea & Ovest',
                 color: '#0369a1', bg: '#f0f9ff',
-                cities: ['Giugliano in Campania', 'Qualiano', 'Villaricca', 'Marano di Napoli', 'Pozzuoli', 'Bacoli', 'Monte di Procida', 'Quarto']
+                cities: ['Giugliano in Campania', 'Quarto', 'Qualiano', 'Villaricca', 'Marano di Napoli', 'Pozzuoli', 'Bacoli', 'Monte di Procida']
               },
               {
                 area: '🏭 Area Est & Nolana',
                 color: '#7c3aed', bg: '#faf5ff',
-                cities: ['Acerra', 'Casalnuovo di Napoli', "Pomigliano d'Arco", 'Marigliano', 'Mariglianella', 'Brusciano', 'Nola', 'Carbonara di Nola', 'Cicciano', 'Scisciano', 'San Vitaliano', 'San Paolo Bel Sito', 'San Gennaro Vesuviano', 'San Giuseppe Vesuviano', 'Saviano', 'Ottaviano']
+                cities: ["Pomigliano d'Arco", 'Acerra', 'Casalnuovo di Napoli', 'Marigliano', 'Mariglianella', 'Brusciano', 'Nola', 'Carbonara di Nola', 'Cicciano', 'Scisciano', 'San Vitaliano', 'San Paolo Bel Sito', 'San Gennaro Vesuviano', 'San Giuseppe Vesuviano', 'Saviano', 'Ottaviano']
               },
               {
                 area: '🌋 Area Vesuviana',
                 color: '#b45309', bg: '#fffbeb',
                 cities: ['Portici', 'San Giorgio a Cremano', 'San Sebastiano al Vesuvio', 'Ercolano', 'Cercola', 'Volla', 'Pollena Trocchia', "Sant'Anastasia", 'Somma Vesuviana', 'Torre del Greco', 'Torre Annunziata', 'Boscoreale', 'Boscotrecase', 'Trecase', 'Terzigno', 'Poggiomarino']
-              },
-              {
-                area: '⛵ Area Sud & Sorrentina',
-                color: '#be185d', bg: '#fdf2f8',
-                cities: ['Agerola', "Sant'Agnello"]
               },
             ].map(({ area, color, bg, cities }) => (
               <div key={area} style={{ background: bg, borderRadius: '16px', padding: '20px 24px', border: `1px solid ${color}22` }}>
