@@ -130,7 +130,6 @@ export default function App() {
 
   // "Chi Sono" active profile tab
   const [activeAboutTab, setActiveAboutTab] = useState('profilo');
-
   // Booking Form State
   const [bookingForm, setBookingForm] = useState({
     firstName: '',
@@ -142,6 +141,8 @@ export default function App() {
     dogAge: '',
     service: 'Dog Walking (30m)',
     date: '',
+    endDate: '',
+    isRange: false,
     time: '10:00',
     notes: '',
     gdpr: false,
@@ -306,6 +307,10 @@ export default function App() {
       triggerToast('Seleziona Data', 'Fai click su un giorno verde disponibile nel calendario.', 'warning', 'Calendario');
       return;
     }
+    if (bookingForm.isRange && !bookingForm.endDate) {
+      triggerToast('Seleziona Data Fine', 'Seleziona la data di fine nel calendario per completare il periodo.', 'warning', 'Calendario');
+      return;
+    }
 
     const newBooking = {
       id: 'b_' + Date.now(),
@@ -315,6 +320,11 @@ export default function App() {
 
     // ✅ Firebase real-time sync — appears on admin panel on any device instantly
     addBooking(newBooking);
+
+    // Dynamic date formatted string
+    const dateFormatted = bookingForm.isRange && bookingForm.endDate
+      ? `dal ${new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} al ${new Date(bookingForm.endDate).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      : new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
 
     // Define the email data (used both for silent send and modal)
     const emailData = {
@@ -339,8 +349,9 @@ Età: ${bookingForm.dogAge}
 
 📅 DETTAGLI APPUNTAMENTO:
 Servizio: ${bookingForm.service}
-Data: ${new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+Data: ${dateFormatted}
 Orario: ${bookingForm.time}
+Prezzo stimato: €${selectedDetails.price}
 Pagamento selezionato: ${bookingForm.paymentMethod.toUpperCase()}
 Note speciali: ${bookingForm.notes || 'Nessuna'}
 
@@ -429,8 +440,9 @@ info@webdog.it`,
               <h3 style="margin:0 0 14px;color:#1d4ed8;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">📅 Dettagli Appuntamento</h3>
               <table width="100%" cellpadding="4" cellspacing="0">
                 <tr><td style="color:#64748b;font-size:13px;width:120px;">Servizio</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${bookingForm.service}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Data</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${new Date(bookingForm.date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Data</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${dateFormatted}</td></tr>
                 <tr><td style="color:#64748b;font-size:13px;">Orario</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${bookingForm.time}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Prezzo stimato</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">€${selectedDetails.price}</td></tr>
                 <tr><td style="color:#64748b;font-size:13px;">Pagamento</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.paymentMethod.toUpperCase()}</td></tr>
                 ${bookingForm.notes ? `<tr><td style="color:#64748b;font-size:13px;">Note</td><td style="color:#0f2d2a;font-size:14px;font-style:italic;">${bookingForm.notes}</td></tr>` : ''}
               </table>
@@ -467,7 +479,8 @@ Telefono: ${bookingForm.phone}
 Email: ${bookingForm.email}
 Cane: ${bookingForm.dogName} (${bookingForm.dogBreed}, ${bookingForm.dogAge})
 Servizio: ${bookingForm.service}
-Data: ${bookingForm.date} alle ${bookingForm.time}
+Data: ${dateFormatted} alle ${bookingForm.time}
+Prezzo stimato: €${selectedDetails.price}
 Pagamento: ${bookingForm.paymentMethod}
 Note: ${bookingForm.notes || 'Nessuna nota'}`
     };
@@ -510,6 +523,8 @@ Note: ${bookingForm.notes || 'Nessuna nota'}`
       dogAge: '',
       service: 'Dog Walking (30m)',
       date: '',
+      endDate: '',
+      isRange: false,
       time: '10:00',
       notes: '',
       gdpr: false,
@@ -766,9 +781,12 @@ Messaggio: ${contactForm.message}`
     updateBooking(id, updatedFields);
     const b = bookings.find((bk) => bk.id === id);
     if (b) {
+      const dateText = updatedFields.endDate 
+        ? `dal ${updatedFields.date} al ${updatedFields.endDate}` 
+        : `${updatedFields.date}`;
       triggerToast(
         'Appuntamento Spostato',
-        `Nuovi dettagli inviati a ${b.firstName}: ${updatedFields.date} ore ${updatedFields.time}.`,
+        `Nuovi dettagli inviati a ${b.firstName}: ${dateText} ore ${updatedFields.time}.`,
         'success',
         'WhatsApp API'
       );
@@ -785,20 +803,76 @@ Messaggio: ${contactForm.message}`
     );
   };
 
+  const getDaysCount = (startDateStr, endDateStr) => {
+    if (!startDateStr || !endDateStr) return 1;
+    const start = new Date(startDateStr);
+    const end = new Date(endDateStr);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
   // Price & Duration calculator for Form visual preview
   const getSelectedServiceDetails = () => {
+    let basePrice = 20;
+    let duration = 'Da concordare';
+    
     switch (bookingForm.service) {
-      case 'Dog Sitting Diurno (Sitter)': return { price: 25, duration: 'Mezza Giornata' };
-      case 'Dog Sitting Pensione (Sitter)': return { price: 35, duration: '24 ore con pernottamento' };
-      case 'Dog Sitting Diurno (Domicilio)': return { price: 40, duration: 'Mezza/Giornata Intera' };
-      case 'Dog Sitting Pensione': return { price: 50, duration: '24 ore con pernottamento' };
-      case 'Dog Walking (30m)': return { price: 20, duration: '30 minuti' };
-      case 'Dog Walking (60m)': return { price: 35, duration: '60 minuti' };
-      case 'Servizio Navetta': return { price: 15, duration: 'Trasporto A/R' };
-      case 'Educazione Base': return { price: 30, duration: '1 Sessione (60m)' };
-      case 'Consulenza Pre-Adozione': return { price: 25, duration: '1 Sessione (45m)' };
-      default: return { price: 20, duration: 'Da concordare' };
+      case 'Dog Sitting Diurno (Sitter)': 
+        basePrice = 25; 
+        duration = 'Mezza Giornata'; 
+        break;
+      case 'Dog Sitting Pensione (Sitter)': 
+        basePrice = 35; 
+        duration = '24 ore con pernottamento'; 
+        break;
+      case 'Dog Sitting Diurno (Domicilio)': 
+        basePrice = 40; 
+        duration = 'Mezza/Giornata Intera'; 
+        break;
+      case 'Dog Sitting Pensione': 
+        basePrice = 50; 
+        duration = '24 ore con pernottamento'; 
+        break;
+      case 'Dog Walking (30m)': 
+        basePrice = 20; 
+        duration = '30 minuti'; 
+        break;
+      case 'Dog Walking (60m)': 
+        basePrice = 35; 
+        duration = '60 minuti'; 
+        break;
+      case 'Servizio Navetta': 
+        basePrice = 15; 
+        duration = 'Trasporto A/R'; 
+        break;
+      case 'Educazione Base': 
+        basePrice = 30; 
+        duration = '1 Sessione (60m)'; 
+        break;
+      case 'Consulenza Pre-Adozione': 
+        basePrice = 25; 
+        duration = '1 Sessione (45m)'; 
+        break;
+      case 'Wedding Dog Sitter': 
+        basePrice = 150; 
+        duration = 'Evento'; 
+        break;
+      default: 
+        basePrice = 20; 
+        duration = 'Da concordare'; 
+        break;
     }
+
+    if (bookingForm.isRange && bookingForm.date && bookingForm.endDate) {
+      const days = getDaysCount(bookingForm.date, bookingForm.endDate);
+      return {
+        price: basePrice * days,
+        duration: `${duration} (${days} giorni)`
+      };
+    }
+
+    return { price: basePrice, duration };
   };
 
   const selectedDetails = getSelectedServiceDetails();
@@ -818,10 +892,28 @@ Messaggio: ${contactForm.message}`
     const dd = String(d).padStart(2, '0');
     const dateStr = `${calYear}-${mm}-${dd}`;
     let status = 'available';
-    const bookingOnDay = bookings.find((b) => b.date === dateStr);
-    if (bookingOnDay) {
-      status = bookingOnDay.status === 'confirmed' ? 'occupied' : 'pending';
+    
+    // Find all bookings on this date
+    const bookingsOnDay = bookings.filter((b) => {
+      if (b.isRange && b.endDate) {
+        return dateStr >= b.date && dateStr <= b.endDate;
+      }
+      return b.date === dateStr;
+    });
+
+    const confirmedBookings = bookingsOnDay.filter(b => b.status === 'confirmed');
+    const pendingBookings = bookingsOnDay.filter(b => b.status === 'pending');
+
+    const hasConfirmedFullDay = confirmedBookings.some(b => 
+      b.service.includes('Sitting') || b.service.includes('Wedding')
+    );
+
+    if (hasConfirmedFullDay || confirmedBookings.length >= 3) {
+      status = 'occupied'; // Red: Fully Booked / Boarding Active
+    } else if (pendingBookings.length > 0 || confirmedBookings.length > 0) {
+      status = 'pending';  // Yellow: appointments exist but slot space is available
     }
+    
     calendarDays.push({ dayNum: d, dateStr, status });
   }
 
@@ -835,26 +927,146 @@ Messaggio: ${contactForm.message}`
       );
       return;
     }
-    if (day.status === 'occupied') {
+
+    // Dynamic Availability Check based on current selection in the form
+    const bookingsOnDay = bookings.filter((b) => {
+      if (b.isRange && b.endDate) {
+        return day.dateStr >= b.date && day.dateStr <= b.endDate;
+      }
+      return b.date === day.dateStr;
+    });
+    
+    const confirmedBookings = bookingsOnDay.filter(b => b.status === 'confirmed');
+    const hasConfirmedFullDay = confirmedBookings.some(b => 
+      b.service.includes('Sitting') || b.service.includes('Wedding')
+    );
+
+    const isRequestedFullDay = bookingForm.service.includes('Sitting') || bookingForm.service.includes('Wedding');
+
+    if (hasConfirmedFullDay) {
       triggerToast(
-        'Giorno Non Disponibile',
-        'Questo slot è al completo. Scegli una giornata evidenziata in verde o contattaci su WhatsApp.',
+        'Giorno Occupato',
+        'In questa data è già attivo un servizio di soggiorno/pensione a giornata intera. Scegli un altro giorno.',
         'error',
         'Calendario'
       );
       return;
     }
-    setSelectedCalendarDay(day.dayNum);
-    setBookingForm((prev) => ({ ...prev, date: day.dateStr }));
-    triggerToast(
-      'Data Selezionata',
-      `Hai scelto il ${day.dayNum} ${calMonthNameCapitalized} per il tuo appuntamento.`,
-      'success',
-      'Calendario'
-    );
+
+    if (isRequestedFullDay && confirmedBookings.length > 0) {
+      triggerToast(
+        'Giorno Occupato',
+        'Non è possibile prenotare un soggiorno/pensione quando ci sono altri appuntamenti confermati in questo giorno.',
+        'error',
+        'Calendario'
+      );
+      return;
+    }
+
+    if (confirmedBookings.length >= 3) {
+      triggerToast(
+        'Limite Raggiunto',
+        'L\'operatore ha raggiunto il limite massimo di 3 appuntamenti per questo giorno.',
+        'error',
+        'Calendario'
+      );
+      return;
+    }
+
+    if (bookingForm.isRange) {
+      // If we don't have start date or already have both start and end: set start date
+      if (!bookingForm.date || (bookingForm.date && bookingForm.endDate)) {
+        setBookingForm((prev) => ({ ...prev, date: day.dateStr, endDate: '' }));
+        setSelectedCalendarDay(day.dayNum);
+        triggerToast(
+          'Data Inizio Selezionata',
+          `Data inizio impostata al ${day.dayNum} ${calMonthNameCapitalized}. Ora seleziona la data di fine.`,
+          'info',
+          'Calendario'
+        );
+      } else {
+        // We have start date but no end date
+        if (day.dateStr < bookingForm.date) {
+          // If clicked date is before start date, make it the new start date
+          setBookingForm((prev) => ({ ...prev, date: day.dateStr, endDate: '' }));
+          setSelectedCalendarDay(day.dayNum);
+          triggerToast(
+            'Data Inizio Selezionata',
+            `Nuova data inizio impostata al ${day.dayNum} ${calMonthNameCapitalized}. Ora seleziona la data di fine.`,
+            'info',
+            'Calendario'
+          );
+        } else {
+          // Check if there are occupied days between start and end
+          const start = new Date(bookingForm.date);
+          const end = new Date(day.dateStr);
+          let blockReason = null;
+          
+          for (let dDate = new Date(start); dDate <= end; dDate.setDate(dDate.getDate() + 1)) {
+            const y = dDate.getFullYear();
+            const m = String(dDate.getMonth() + 1).padStart(2, '0');
+            const dateD = String(dDate.getDate()).padStart(2, '0');
+            const dateStr = `${y}-${m}-${dateD}`;
+            
+            const bookingsOnDate = bookings.filter(b => {
+              if (b.status !== 'confirmed') return false;
+              if (b.isRange && b.endDate) {
+                return dateStr >= b.date && dateStr <= b.endDate;
+              }
+              return b.date === dateStr;
+            });
+
+            const hasConfirmedFullDayOnDate = bookingsOnDate.some(b => 
+              b.service.includes('Sitting') || b.service.includes('Wedding')
+            );
+            
+            if (hasConfirmedFullDayOnDate) {
+              blockReason = `Il giorno ${dDate.getDate()} è occupato da un servizio a giornata intera.`;
+              break;
+            }
+            if (isRequestedFullDay && bookingsOnDate.length > 0) {
+              blockReason = `Il giorno ${dDate.getDate()} ha già appuntamenti e non può accettare soggiorni a giornata intera.`;
+              break;
+            }
+            if (bookingsOnDate.length >= 3) {
+              blockReason = `Il giorno ${dDate.getDate()} ha raggiunto il limite massimo di appuntamenti.`;
+              break;
+            }
+          }
+
+          if (blockReason) {
+            triggerToast(
+              'Intervallo Non Disponibile',
+              blockReason,
+              'error',
+              'Calendario'
+            );
+            return;
+          }
+
+          setBookingForm((prev) => ({ ...prev, endDate: day.dateStr }));
+          const startDayNum = new Date(bookingForm.date).getDate();
+          triggerToast(
+            'Intervallo Selezionato',
+            `Hai scelto dal ${startDayNum} al ${day.dayNum} ${calMonthNameCapitalized}.`,
+            'success',
+            'Calendario'
+          );
+        }
+      }
+    } else {
+      // Single date selection
+      setSelectedCalendarDay(day.dayNum);
+      setBookingForm((prev) => ({ ...prev, date: day.dateStr, endDate: '', isRange: false }));
+      triggerToast(
+        'Data Selezionata',
+        `Hai scelto il ${day.dayNum} ${calMonthNameCapitalized} per il tuo appuntamento.`,
+        'success',
+        'Calendario'
+      );
+    }
   };
 
-  // Filtered Reviews logic
   const averageStars = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
 
   // Gallery slideshow actions
@@ -1633,9 +1845,77 @@ Messaggio: ${contactForm.message}`
             gap: '40px',
             alignItems: 'start'
           }}>
-
             {/* LEFT COLUMN: INTERACTIVE MONTH CALENDAR */}
             <div className="glass-panel" style={{ padding: '24px' }}>
+              
+              {/* Range Toggle Switch & Reset */}
+              <div style={{ 
+                background: 'rgba(15, 118, 110, 0.05)',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+                border: '1px solid rgba(15, 118, 110, 0.1)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    id="isRangeCheckbox"
+                    checked={bookingForm.isRange}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setBookingForm(prev => ({
+                        ...prev,
+                        isRange: checked,
+                        date: '',
+                        endDate: ''
+                      }));
+                      setSelectedCalendarDay(null);
+                      triggerToast(
+                        checked ? 'Seleziona Multi-Giorno Attivo' : 'Giorno Singolo Attivo',
+                        checked ? 'Ora puoi selezionare un intervallo di date nel calendario.' : 'Seleziona una singola data.',
+                        'info',
+                        'Calendario'
+                      );
+                    }}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="isRangeCheckbox" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#042f2e', cursor: 'pointer', userSelect: 'none' }}>
+                    📅 Ho bisogno di più giorni consecutivi
+                  </label>
+                </div>
+                {(bookingForm.date || bookingForm.endDate) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBookingForm(prev => ({
+                        ...prev,
+                        date: '',
+                        endDate: ''
+                      }));
+                      setSelectedCalendarDay(null);
+                      triggerToast('Selezione Reset', 'La selezione delle date è stata cancellata.', 'info', 'Calendario');
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ef4444',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    Reset 🔄
+                  </button>
+                )}
+              </div>
+
               <div className="calendar-container">
                 <div className="calendar-header">
                   <h4 style={{ fontWeight: 800, fontSize: '1.1rem', color: '#0f2d2a' }}>{calMonthNameCapitalized}</h4>
@@ -1652,24 +1932,38 @@ Messaggio: ${contactForm.message}`
                   ))}
 
                   {/* Monthly Days mapping */}
-                  {calendarDays.map((day) => (
-                    <div
-                      key={day.dayNum}
-                      onClick={() => handleCalendarDayClick(day)}
-                      className={`calendar-cell ${selectedCalendarDay === day.dayNum ? 'selected' : ''}`}
-                      style={{
-                        opacity: day.dayNum < todayDate ? 0.4 : 1,
-                        cursor: day.dayNum < todayDate ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      <span className="calendar-cell-num">{day.dayNum}</span>
+                  {calendarDays.map((day) => {
+                    const isCellSelected = bookingForm.isRange
+                      ? day.dateStr === bookingForm.date
+                        ? 'selected-start'
+                        : day.dateStr === bookingForm.endDate
+                        ? 'selected-end'
+                        : bookingForm.date && bookingForm.endDate && day.dateStr > bookingForm.date && day.dateStr < bookingForm.endDate
+                        ? 'in-range'
+                        : ''
+                      : day.dateStr === bookingForm.date
+                      ? 'selected'
+                      : '';
+                    
+                    return (
+                      <div
+                        key={day.dayNum}
+                        onClick={() => handleCalendarDayClick(day)}
+                        className={`calendar-cell ${isCellSelected}`}
+                        style={{
+                          opacity: day.dayNum < todayDate ? 0.4 : 1,
+                          cursor: day.dayNum < todayDate ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        <span className="calendar-cell-num">{day.dayNum}</span>
 
-                      {/* Status indicator dot */}
-                      <span className={`calendar-cell-status ${day.status === 'available' ? 'status-available' :
-                          day.status === 'pending' ? 'status-pending' : 'status-occupied'
-                        }`} />
-                    </div>
-                  ))}
+                        {/* Status indicator dot */}
+                        <span className={`calendar-cell-status ${day.status === 'available' ? 'status-available' :
+                            day.status === 'pending' ? 'status-pending' : 'status-occupied'
+                          }`} />
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Legenda */}
@@ -1831,19 +2125,40 @@ Messaggio: ${contactForm.message}`
                     />
                   </div>
                 </div>
-
                 {/* Selected calendar day highlight in form */}
                 <div style={{ marginBottom: '20px' }}>
                   <label className="form-label">DATA SELEZIONATA</label>
                   <input
                     type="text"
-                    value={bookingForm.date ? new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Scegli dal calendario a sinistra 📅'}
+                    value={
+                      bookingForm.isRange
+                        ? bookingForm.date
+                          ? bookingForm.endDate
+                            ? `Dal ${new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} al ${new Date(bookingForm.endDate).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                            : `Dal ${new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })} (seleziona la data di fine...)`
+                          : 'Scegli la data di inizio dal calendario 📅'
+                        : bookingForm.date
+                        ? new Date(bookingForm.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
+                        : 'Scegli la data dal calendario 📅'
+                    }
                     disabled
                     className="form-input"
-                    style={{ background: bookingForm.date ? '#d1fae5' : '#fee2e2', border: 'none', fontWeight: 700, color: '#042f2e' }}
+                    style={{
+                      background: bookingForm.isRange
+                        ? bookingForm.date && bookingForm.endDate
+                          ? '#d1fae5'
+                          : bookingForm.date
+                          ? '#fef9c3'
+                          : '#fee2e2'
+                        : bookingForm.date
+                        ? '#d1fae5'
+                        : '#fee2e2',
+                      border: 'none',
+                      fontWeight: 700,
+                      color: '#042f2e'
+                    }}
                   />
                 </div>
-
                 <div style={{ marginBottom: '20px' }}>
                   <label className="form-label">NOTE SPECIALI O PATOLOGIE</label>
                   <textarea

@@ -146,23 +146,41 @@ export default function AdminPortal({
   // Calculate Dashboard Statistics
   const totalBookingsCount = bookings.length;
   
-  // Dynamic Revenue calculation (only count confirmed or pending ones, let's say confirmed + pending)
-  const calculateBookingPrice = (service) => {
+  const calculateBookingPrice = (service, booking) => {
+    let basePrice = 20;
     switch (service) {
-      case 'Passeggiata Cinofila (30m)': return 15;
-      case 'Passeggiata Cinofila (60m)': return 25;
-      case 'Dog Sitting Diurno': return 20;
-      case 'Dog Sitting Notturno': return 35;
-      case 'Servizio Navetta': return 15; // starting at 10-15
-      case 'Educazione Base': return 30;
-      case 'Consulenza Pre-Adozione': return 25;
-      default: return 20;
+      case 'Dog Sitting Diurno (Sitter)': basePrice = 25; break;
+      case 'Dog Sitting Pensione (Sitter)': basePrice = 35; break;
+      case 'Dog Sitting Diurno (Domicilio)': basePrice = 40; break;
+      case 'Dog Sitting Pensione': basePrice = 50; break;
+      case 'Dog Walking (30m)': basePrice = 20; break;
+      case 'Dog Walking (60m)': basePrice = 35; break;
+      case 'Servizio Navetta': basePrice = 15; break;
+      case 'Educazione Base': basePrice = 30; break;
+      case 'Consulenza Pre-Adozione': basePrice = 25; break;
+      case 'Wedding Dog Sitter': basePrice = 150; break;
+      // Compat for legacy services names
+      case 'Passeggiata Cinofila (30m)': basePrice = 15; break;
+      case 'Passeggiata Cinofila (60m)': basePrice = 25; break;
+      case 'Dog Sitting Diurno': basePrice = 20; break;
+      case 'Dog Sitting Notturno': basePrice = 35; break;
+      default: basePrice = 20; break;
     }
+
+    if (booking?.isRange && booking?.date && booking?.endDate) {
+      const start = new Date(booking.date);
+      const end = new Date(booking.endDate);
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return basePrice * diffDays;
+    }
+    return basePrice;
   };
 
   const totalRevenue = bookings
     .filter(b => b.status === 'confirmed')
-    .reduce((sum, b) => sum + calculateBookingPrice(b.service), 0);
+    .reduce((sum, b) => sum + calculateBookingPrice(b.service, b), 0);
+
 
   const pendingBookingsCount = bookings.filter(b => b.status === 'pending').length;
   
@@ -1451,14 +1469,16 @@ export default function AdminPortal({
 function BookingRow({ booking, updateBookingStatus, updateBookingDetails, deleteBooking, calculatePrice }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedDate, setEditedDate] = useState(booking.date);
+  const [editedEndDate, setEditedEndDate] = useState(booking.endDate || booking.date);
   const [editedTime, setEditedTime] = useState(booking.time);
   const [editedService, setEditedService] = useState(booking.service);
 
-  const price = calculatePrice(booking.service);
+  const price = calculatePrice(booking.service, booking);
 
   const handleSave = () => {
     updateBookingDetails(booking.id, {
       date: editedDate,
+      endDate: booking.isRange ? editedEndDate : '',
       time: editedTime,
       service: editedService
     });
@@ -1483,7 +1503,73 @@ function BookingRow({ booking, updateBookingStatus, updateBookingDetails, delete
       default: return '🟡 In Attesa';
     }
   };
+  const getGoogleCalendarLink = () => {
+    const title = encodeURIComponent(`WebDog: ${booking.service || 'Servizio'} - ${booking.dogName || 'Cane'}`);
+    const startStr = booking.date || '';
+    const endStr = booking.isRange && booking.endDate ? booking.endDate : startStr;
+    const timeStr = booking.time || "09:00";
+    const startFormatted = startStr.replace(/-/g, '');
+    const hhmm = timeStr.replace(':', '');
+    const startTime = `${startFormatted}T${hhmm}00`;
+    const endFormatted = endStr.replace(/-/g, '');
+    const endTime = booking.isRange 
+      ? `${endFormatted}T180000`
+      : `${startFormatted}T${String(Number(hhmm.substring(0, 2)) + 1).padStart(2, '0')}${hhmm.substring(2)}00`;
+      
+    const dates = `${startTime}/${endTime}`;
+    const details = encodeURIComponent(
+      `Cliente: ${booking.firstName || ''} ${booking.lastName || ''}\n` +
+      `Cane: ${booking.dogName || ''} (${booking.dogBreed || ''}, ${booking.dogAge || ''} anni)\n` +
+      `Telefono: ${booking.phone || ''}\n` +
+      `Pagamento: ${(booking.paymentMethod || 'Contanti').toUpperCase()}\n` +
+      `Note: ${booking.notes || 'Nessuna'}`
+    );
+    const location = encodeURIComponent("Napoli e Provincia");
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+  };
 
+  const downloadICSFile = () => {
+    const title = `WebDog: ${booking.service || 'Servizio'} - ${booking.dogName || 'Cane'}`;
+    const startStr = booking.date || '';
+    const endStr = booking.isRange && booking.endDate ? booking.endDate : startStr;
+    const timeStr = booking.time || "09:00";
+    
+    const startFormatted = startStr.replace(/-/g, '');
+    const endFormatted = endStr.replace(/-/g, '');
+    const hhmm = timeStr.replace(':', '');
+    
+    const startTime = `${startFormatted}T${hhmm}00`;
+    const endTime = booking.isRange 
+      ? `${endFormatted}T180000`
+      : `${startFormatted}T${String(Number(hhmm.substring(0, 2)) + 1).padStart(2, '0')}${hhmm.substring(2)}00`;
+
+    const description = `Cliente: ${booking.firstName || ''} ${booking.lastName || ''}\\nCane: ${booking.dogName || ''} (${booking.dogBreed || ''}, ${booking.dogAge || ''} anni)\\nTelefono: ${booking.phone || ''}\\nPagamento: ${(booking.paymentMethod || 'Contanti').toUpperCase()}\\nNote: ${booking.notes || 'Nessuna'}`;
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//WebDog//Booking System//IT',
+      'BEGIN:VEVENT',
+      `UID:b_${booking.id}`,
+      `DTSTAMP:${startTime}`,
+      `DTSTART:${startTime}`,
+      `DTEND:${endTime}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${description}`,
+      'LOCATION:Napoli e Provincia',
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `appuntamento_${booking.dogName || 'Cane'}_${booking.date || 'Data'}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   return (
     <div className="glass-card" style={{
       padding: '20px',
@@ -1502,7 +1588,7 @@ function BookingRow({ booking, updateBookingStatus, updateBookingDetails, delete
         gap: '12px'
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <h4 style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f2d2a' }}>
               {booking.firstName} {booking.lastName}
             </h4>
@@ -1515,8 +1601,52 @@ function BookingRow({ booking, updateBookingStatus, updateBookingDetails, delete
             }}>
               {getStatusText(booking.status)}
             </span>
+            {booking.status === 'confirmed' && (
+              <div style={{ display: 'inline-flex', gap: '6px' }}>
+                <a
+                  href={getGoogleCalendarLink()}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    fontSize: '0.7rem',
+                    background: '#e0f2fe',
+                    color: '#0369a1',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    border: '1px solid #bae6fd'
+                  }}
+                  title="Aggiungi a Google Calendar"
+                >
+                  📅 Google
+                </a>
+                <button
+                  type="button"
+                  onClick={downloadICSFile}
+                  style={{
+                    fontSize: '0.7rem',
+                    background: '#f3e8ff',
+                    color: '#6b21a8',
+                    border: '1px solid #e9d5ff',
+                    cursor: 'pointer',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px'
+                  }}
+                  title="Scarica file iCal (.ics)"
+                >
+                  💾 iCal
+                </button>
+              </div>
+            )}
           </div>
-
           <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '2px' }}>
             Cane: <strong>{booking.dogName}</strong> ({booking.dogBreed}, {booking.dogAge} anni) • Tel: {booking.phone}
           </p>
@@ -1525,27 +1655,51 @@ function BookingRow({ booking, updateBookingStatus, updateBookingDetails, delete
         {/* Date and Time values */}
         <div style={{ textAlign: 'right' }}>
           {isEditing ? (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <input 
-                type="date" 
-                value={editedDate} 
-                onChange={(e) => setEditedDate(e.target.value)}
-                className="form-input"
-                style={{ padding: '6px 10px', fontSize: '0.8rem', width: '130px', borderRadius: '6px' }}
-              />
-              <input 
-                type="time" 
-                value={editedTime} 
-                onChange={(e) => setEditedTime(e.target.value)}
-                className="form-input"
-                style={{ padding: '6px 10px', fontSize: '0.8rem', width: '90px', borderRadius: '6px' }}
-              />
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>INIZIO</span>
+                <input 
+                  type="date" 
+                  value={editedDate} 
+                  onChange={(e) => setEditedDate(e.target.value)}
+                  className="form-input"
+                  style={{ padding: '6px 10px', fontSize: '0.8rem', width: '130px', borderRadius: '6px' }}
+                />
+              </div>
+              {booking.isRange && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>FINE</span>
+                  <input 
+                    type="date" 
+                    value={editedEndDate} 
+                    onChange={(e) => setEditedEndDate(e.target.value)}
+                    className="form-input"
+                    style={{ padding: '6px 10px', fontSize: '0.8rem', width: '130px', borderRadius: '6px' }}
+                  />
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>ORA</span>
+                <input 
+                  type="time" 
+                  value={editedTime} 
+                  onChange={(e) => setEditedTime(e.target.value)}
+                  className="form-input"
+                  style={{ padding: '6px 10px', fontSize: '0.8rem', width: '90px', borderRadius: '6px' }}
+                />
+              </div>
             </div>
           ) : (
             <div>
-              <p style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f766e' }}>
-                📅 {new Date(booking.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
-              </p>
+              {booking.isRange && booking.endDate ? (
+                <p style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f766e' }}>
+                  📅 Dal {new Date(booking.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })} al {new Date(booking.endDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              ) : (
+                <p style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f766e' }}>
+                  📅 {new Date(booking.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              )}
               <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>
                 🕒 Ore {booking.time}
               </p>
@@ -1574,13 +1728,32 @@ function BookingRow({ booking, updateBookingStatus, updateBookingDetails, delete
               className="form-input"
               style={{ padding: '6px 10px', fontSize: '0.85rem', width: '220px', borderRadius: '6px' }}
             >
-              <option value="Passeggiata Cinofila (30m)">Passeggiata Cinofila (30m)</option>
-              <option value="Passeggiata Cinofila (60m)">Passeggiata Cinofila (60m)</option>
-              <option value="Dog Sitting Diurno">Dog Sitting Diurno</option>
-              <option value="Dog Sitting Notturno">Dog Sitting Notturno</option>
-              <option value="Servizio Navetta">Servizio Navetta</option>
-              <option value="Educazione Base">Educazione Base</option>
-              <option value="Consulenza Pre-Adozione">Consulenza Pre-Adozione</option>
+              <optgroup label="🏡 Presso la casa del Sitter">
+                <option value="Dog Sitting Diurno (Sitter)">Dog Sitting Diurno (Sitter)</option>
+                <option value="Dog Sitting Pensione (Sitter)">Dog Sitting Pensione (Sitter)</option>
+              </optgroup>
+              <optgroup label="🦮 Presso l'abitazione del Cliente">
+                <option value="Dog Sitting Diurno (Domicilio)">Dog Sitting Diurno (Domicilio)</option>
+                <option value="Dog Sitting Pensione">Dog Sitting Pensione</option>
+              </optgroup>
+              <optgroup label="🌳 In Giro per la Città">
+                <option value="Dog Walking (30m)">Dog Walking (30m)</option>
+                <option value="Dog Walking (60m)">Dog Walking (60m)</option>
+              </optgroup>
+              <optgroup label="🚌 Navetta & Formazione">
+                <option value="Servizio Navetta">Servizio Navetta</option>
+                <option value="Educazione Base">Educazione Base</option>
+                <option value="Consulenza Pre-Adozione">Consulenza Pre-Adozione</option>
+              </optgroup>
+              <optgroup label="👑 Wedding Dog Sitter">
+                <option value="Wedding Dog Sitter">Wedding Dog Sitter</option>
+              </optgroup>
+              <optgroup label="📜 Storico/Compatibilità">
+                <option value="Passeggiata Cinofila (30m)">Passeggiata Cinofila (30m)</option>
+                <option value="Passeggiata Cinofila (60m)">Passeggiata Cinofila (60m)</option>
+                <option value="Dog Sitting Diurno">Dog Sitting Diurno</option>
+                <option value="Dog Sitting Notturno">Dog Sitting Notturno</option>
+              </optgroup>
             </select>
           ) : (
             <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155' }}>

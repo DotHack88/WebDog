@@ -308,6 +308,27 @@ body {
   background: var(--primary-glow) !important;
 }
 
+.calendar-cell.selected-start,
+.calendar-cell.selected-end {
+  background: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+.calendar-cell.selected-start .calendar-cell-num,
+.calendar-cell.selected-end .calendar-cell-num {
+  color: white !important;
+}
+
+.calendar-cell.in-range {
+  background: rgba(15, 118, 110, 0.12) !important;
+  border-color: rgba(15, 118, 110, 0.15) !important;
+}
+
+.calendar-cell.in-range:hover {
+  background: rgba(15, 118, 110, 0.2) !important;
+}
+
 .calendar-cell-num {
   font-weight: 700;
   font-size: 0.95rem;
