@@ -928,7 +928,6 @@ Messaggio: ${contactForm.message}`
 
         {/* Desktop Links */}
         <nav style={{ display: 'flex', gap: '24px' }} className="desktop-nav">
-          <a href="#home" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Home</a>
           <a href="#about" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Chi Sono</a>
           <a href="#servizi" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Servizi</a>
           <a href="#prenotazioni" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Prenotazioni</a>
@@ -971,7 +970,6 @@ Messaggio: ${contactForm.message}`
 
       {/* Mobile Overlay Navigation Panel */}
       <nav className={`mobile-nav-overlay ${mobileMenuOpen ? 'open' : ''}`}>
-        <a href="#home" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Home</a>
         <a href="#about" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Chi Sono</a>
         <a href="#servizi" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Servizi</a>
         <a href="#prenotazioni" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Prenotazioni</a>
@@ -2266,7 +2264,7 @@ Messaggio: ${contactForm.message}`
 
 
       {/* -------------------- ZONE SERVITE -------------------- */}
-      <section style={{ background: 'white', padding: '64px 0' }}>
+      <section id="zone" style={{ background: 'white', padding: '64px 0' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <span className="badge">📍 COPERTURA TERRITORIALE</span>
@@ -2359,7 +2357,7 @@ Messaggio: ${contactForm.message}`
 
 
       {/* -------------------- FAQ -------------------- */}
-      <section style={{ background: '#f0fdfa', padding: '80px 0' }}>
+      <section id="faq" style={{ background: '#f0fdfa', padding: '80px 0' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <span className="badge">❓ DOMANDE FREQUENTI</span>
