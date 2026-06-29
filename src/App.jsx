@@ -707,7 +707,7 @@ info@webdog.it`,
         <!-- CTA -->
         <tr>
           <td style="padding:28px 32px 0;text-align:center;">
-            <p style="margin:0 0 12px;color:#475569;font-size:14px;">Non vedi l'ora? Scrivici direttamente!</p>
+            <p style="margin:0 0 12px;color:#475569;font-size:14px;">Non vedi l'ora? Scrivi direttamente!</p>
             <a href="https://wa.me/393467251989" style="display:inline-block;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;margin-right:8px;">💬 WhatsApp</a>
             <a href="mailto:info@webdog.it" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;">📧 Email</a>
           </td>
@@ -2706,10 +2706,10 @@ Messaggio: ${contactForm.message}`
       <section id="contatti" className="section-padding" style={{ background: 'white' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <span className="badge">📞 SCRIVICI O PRENOTA</span>
-            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Siamo Sempre Disponibili</h2>
+            <span className="badge">📞 SCRIVIMI E PRENOTA</span>
+            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Sono Sempre Disponibili</h2>
             <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: '560px', margin: '8px auto 0 auto' }}>
-              Hai domande sui percorsi educativi o di dog sitting? Contattaci direttamente o compila il form.
+              Hai domande sui percorsi educativi o di dog sitting? Contattami direttamente o compila il form.
             </p>
           </div>
 
@@ -2869,7 +2869,7 @@ Messaggio: ${contactForm.message}`
                 <div style={{ marginBottom: '20px' }}>
                   <label className="form-label">IL TUO MESSAGGIO</label>
                   <textarea 
-                    placeholder="Scrivi qui la tua richiesta o perplessità cinofila..." 
+                    placeholder="Scrivi qui la tua richiesta o perplessità..." 
                     required 
                     rows="4" 
                     className="form-input" 
@@ -3017,7 +3017,7 @@ Messaggio: ${contactForm.message}`
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chatta su WhatsApp"
-        title="Scrivici su WhatsApp"
+        title="Scrivimi su WhatsApp"
         style={{
           position: 'fixed',
           bottom: '28px',
