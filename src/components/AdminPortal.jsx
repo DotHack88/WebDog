@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   signInWithEmailAndPassword,
   signOut,
   setPersistence,
-  browserSessionPersistence
+  browserSessionPersistence,
+  onAuthStateChanged
 } from 'firebase/auth';
 import { 
   Calendar, DollarSign, Users, Star, Trash2, Check, Clock, 
@@ -46,6 +47,24 @@ export default function AdminPortal({
     }
   })();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authLoading, setAuthLoading] = useState(FIREBASE_CONFIGURED ? true : false);
+
+  // Ripristina la sessione dell'operatore in caso di refresh della pagina
+  useEffect(() => {
+    if (!FIREBASE_CONFIGURED || !auth) {
+      setAuthLoading(false);
+      return;
+    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -361,6 +380,24 @@ export default function AdminPortal({
     acc[b.service] = (acc[b.service] || 0) + 1;
     return acc;
   }, {});
+
+  // Schermata di caricamento durante la verifica della sessione Firebase
+  if (authLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #042f2e 0%, #0f766e 100%)',
+        color: 'white'
+      }}>
+        <Loader className="rotating" size={48} style={{ color: '#2dd4bf', marginBottom: '16px' }} />
+        <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#ccfbf1' }}>Verifica sessione in corso...</p>
+      </div>
+    );
+  }
 
   // Pre-login state
   if (!isLoggedIn) {
@@ -1607,374 +1644,240 @@ export default function AdminPortal({
         )}
 
         {activeTab === 'gallery' && (
-          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            {/* Gallery Sync Status and Header actions */}
+          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Sync Status Bar */}
             <div style={{
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
+              justifyContent: 'space-between',
               background: '#f0fdfa',
               border: '1px solid #ccfbf1',
-              borderRadius: '16px',
-              padding: '16px 24px',
+              borderRadius: '12px',
+              padding: '10px 16px',
               flexWrap: 'wrap',
-              gap: '16px'
+              gap: '8px'
             }}>
-              <div>
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  color: gallerySyncStatus === 'synced' ? '#10b981' : '#64748b',
-                  background: gallerySyncStatus === 'synced' ? '#d1fae5' : '#f1f5f9',
-                  padding: '4px 10px',
-                  borderRadius: '999px'
-                }}>
-                  {gallerySyncStatus === 'synced' ? '🟢 Live Sincronizzato' : gallerySyncStatus === 'connecting' ? '🟡 Connessione...' : '⚪ Solo Locale (Offline)'}
-                </span>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '6px' }}>
-                  Le foto aggiunte o modificate qui sono sincronizzate in tempo reale sul sito pubblico.
-                </p>
-              </div>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                fontSize: '0.75rem', fontWeight: 700,
+                color: gallerySyncStatus === 'synced' ? '#10b981' : '#64748b',
+                background: gallerySyncStatus === 'synced' ? '#d1fae5' : '#f1f5f9',
+                padding: '3px 10px', borderRadius: '999px'
+              }}>
+                {gallerySyncStatus === 'synced' ? '🟢 Live Sync' : gallerySyncStatus === 'connecting' ? '🟡 Connessione...' : '⚪ Solo Locale'}
+              </span>
+              <button
+                onClick={() => setEditingImageId(editingImageId === '__new__' ? null : '__new__')}
+                style={{
+                  background: '#0f766e', color: 'white', border: 'none', padding: '6px 12px',
+                  borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+              >
+                {editingImageId === '__new__' ? 'Chiudi' : <><Plus size={14} /> Nuova Foto</>}
+              </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', alignItems: 'start' }}>
-              
-              {/* Left Column: Form to Add/Edit */}
-              <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
-                <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0f2d2a', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {editingImageId ? <Edit2 size={20} /> : <Plus size={20} />}
-                  {editingImageId ? 'Modifica Foto' : 'Aggiungi Nuova Foto'}
-                </h3>
-
-                <form onSubmit={editingImageId ? handleSaveEditImage : handleAddGalleryImage} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Titolo Foto *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="es. Gara di Agility al tramonto"
-                      value={editingImageId ? editGalleryForm.title : galleryForm.title}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (editingImageId) {
-                          setEditGalleryForm(prev => ({ ...prev, title: val }));
-                        } else {
-                          setGalleryForm(prev => ({ ...prev, title: val }));
-                        }
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.85rem',
-                        outline: 'none'
-                      }}
-                    />
+            {/* Form */}
+            {editingImageId && (
+              <div className="glass-panel" style={{ padding: '20px' }}>
+                <form
+                  onSubmit={editingImageId === '__new__' ? handleAddGalleryImage : handleSaveEditImage}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>Titolo</label>
+                      <input
+                        type="text" required placeholder="Titolo foto"
+                        value={editingImageId === '__new__' ? galleryForm.title : editGalleryForm.title}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (editingImageId === '__new__') setGalleryForm(p => ({ ...p, title: val }));
+                          else setEditGalleryForm(p => ({ ...p, title: val }));
+                        }}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>Categoria</label>
+                      <select
+                        value={editingImageId === '__new__' ? galleryForm.category : editGalleryForm.category}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (editingImageId === '__new__') setGalleryForm(p => ({ ...p, category: val }));
+                          else setEditGalleryForm(p => ({ ...p, category: val }));
+                        }}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                      >
+                        {['Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport'].map((cat) => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Categoria *</label>
-                    <select
-                      value={editingImageId ? editGalleryForm.category : galleryForm.category}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (editingImageId) {
-                          setEditGalleryForm(prev => ({ ...prev, category: val }));
-                        } else {
-                          setGalleryForm(prev => ({ ...prev, category: val }));
-                        }
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.85rem',
-                        background: 'white',
-                        outline: 'none'
-                      }}
-                    >
-                      {['Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport'].map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Descrizione Breve</label>
-                    <textarea
-                      placeholder="es. Un bellissimo momento di socializzazione tra cuccioli."
-                      rows={3}
-                      value={editingImageId ? editGalleryForm.desc : galleryForm.desc}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (editingImageId) {
-                          setEditGalleryForm(prev => ({ ...prev, desc: val }));
-                        } else {
-                          setGalleryForm(prev => ({ ...prev, desc: val }));
-                        }
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.85rem',
-                        resize: 'vertical',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-
-                  {/* Image Picker */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Immagine Foto *</label>
-                    
-                    {/* Live Preview if url exists */}
-                    {(editingImageId ? editGalleryForm.src : galleryForm.src) ? (
-                      <div style={{ position: 'relative', marginBottom: '12px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', aspectRatio: '16/9' }}>
-                        <img
-                          src={editingImageId ? editGalleryForm.src : galleryForm.src}
-                          alt="Anteprima"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (editingImageId) {
-                              setEditGalleryForm(prev => ({ ...prev, src: '' }));
-                            } else {
-                              setGalleryForm(prev => ({ ...prev, src: '' }));
-                            }
-                          }}
-                          style={{
-                            position: 'absolute',
-                            top: '8px',
-                            right: '8px',
-                            background: 'rgba(0,0,0,0.6)',
-                            border: 'none',
-                            color: 'white',
-                            borderRadius: '50%',
-                            width: '28px',
-                            height: '28px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <X size={16} />
-                        </button>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>Immagine</label>
+                    {(editingImageId === '__new__' ? galleryForm.src : editGalleryForm.src) ? (
+                      <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', height: '120px' }}>
+                        <img src={editingImageId === '__new__' ? galleryForm.src : editGalleryForm.src} alt="Ant" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button type="button" onClick={() => { if (editingImageId === '__new__') setGalleryForm(p => ({ ...p, src: '' })); else setEditGalleryForm(p => ({ ...p, src: '' })); }} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', border: 'none', color: 'white', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer' }}><X size={14} /></button>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
                         <label style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          border: '2px dashed #cbd5e1',
-                          borderRadius: '12px',
-                          padding: '24px',
-                          textAlign: 'center',
-                          cursor: isUploading ? 'not-allowed' : 'pointer',
-                          background: '#f8fafc',
-                          transition: 'all 0.2s',
-                          gap: '8px'
+                          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                          border: '2px dashed #cbd5e1', borderRadius: '10px', padding: '12px',
+                          cursor: isUploading ? 'not-allowed' : 'pointer', background: '#f8fafc',
+                          fontSize: '0.8rem', fontWeight: 600, color: '#475569', textAlign: 'center'
                         }}>
-                          {isUploading ? (
-                            <>
-                              <Loader className="rotating" size={24} style={{ color: '#0f766e' }} />
-                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f2d2a' }}>Caricamento in corso...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Upload size={24} style={{ color: '#0f766e' }} />
-                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f2d2a' }}>Seleziona e Carica File</span>
-                              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>PNG, JPG, WEBP fino a 5MB</span>
-                            </>
-                          )}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            disabled={isUploading}
-                            onChange={(e) => handleFileUpload(e, editingImageId ? 'edit' : 'add')}
-                            style={{ display: 'none' }}
-                          />
+                          {isUploading ? <><Loader className="rotating" size={16} style={{ color: '#0f766e' }} /> Caricamento...</> : <><Upload size={16} style={{ color: '#0f766e' }} /> Carica File</>}
+                          <input type="file" accept="image/*" disabled={isUploading}
+                            onChange={(e) => handleFileUpload(e, editingImageId === '__new__' ? 'add' : 'edit')}
+                            style={{ display: 'none' }} />
                         </label>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ flex: 1, height: '1px', background: '#cbd5e1' }}></div>
-                          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>OPPURE</span>
-                          <div style={{ flex: 1, height: '1px', background: '#cbd5e1' }}></div>
-                        </div>
-
-                        <div>
-                          <input
-                            type="text"
-                            placeholder="Incolla l'indirizzo URL dell'immagine"
-                            value={editingImageId ? editGalleryForm.src : galleryForm.src}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (editingImageId) {
-                                setEditGalleryForm(prev => ({ ...prev, src: val }));
-                              } else {
-                                setGalleryForm(prev => ({ ...prev, src: val }));
-                              }
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '10px 14px',
-                              borderRadius: '8px',
-                              border: '1px solid #cbd5e1',
-                              fontSize: '0.85rem',
-                              outline: 'none'
-                            }}
-                          />
-                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', color: '#94a3b8', fontSize: '0.7rem', fontWeight: 600 }}>o</div>
+                        <input
+                          type="text"
+                          placeholder="URL immagine"
+                          value={editingImageId === '__new__' ? galleryForm.src : editGalleryForm.src}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (editingImageId === '__new__') setGalleryForm(p => ({ ...p, src: val }));
+                            else setEditGalleryForm(p => ({ ...p, src: val }));
+                          }}
+                          style={{ flex: 1.5, padding: '8px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.8rem', outline: 'none' }}
+                        />
                       </div>
                     )}
-
-                    {uploadError && (
-                      <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '6px' }}>{uploadError}</p>
-                    )}
+                    {uploadError && <p style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '4px' }}>{uploadError}</p>}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       type="submit"
                       disabled={isUploading}
                       className="btn btn-primary"
-                      style={{ flex: 1, padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '10px' }}
+                      style={{ flex: 1, padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '9px', fontSize: '0.85rem' }}
                     >
-                      {editingImageId ? <Check size={16} /> : <Plus size={16} />}
-                      {editingImageId ? 'Salva Modifiche' : 'Aggiungi alla Galleria'}
+                      {editingImageId === '__new__' ? <><Plus size={15} /> Aggiungi</> : <><Check size={15} /> Salva</>}
                     </button>
-                    {editingImageId && (
-                      <button
-                        type="button"
-                        onClick={() => setEditingImageId(null)}
-                        className="btn btn-secondary"
-                        style={{ padding: '12px 16px', borderRadius: '10px' }}
-                      >
-                        Annulla
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setEditingImageId(null)}
+                      className="btn btn-secondary"
+                      style={{ padding: '10px 16px', borderRadius: '9px', fontSize: '0.85rem' }}
+                    >
+                      Annulla
+                    </button>
                   </div>
-
                 </form>
               </div>
+            )}
 
-              {/* Right Column: List of Current Photos */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0f2d2a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ImageIcon size={20} />
-                  <span>Foto in Galleria ({galleryImages.length})</span>
-                </h3>
+            {/* Photo Grid */}
+            <div>
+              <h3 style={{ fontWeight: 700, fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                Foto in Galleria ({galleryImages.length})
+              </h3>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '600px', overflowY: 'auto', paddingRight: '4px' }}>
+              {galleryImages.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8', background: '#f8fafc', borderRadius: '14px' }}>
+                  <ImageIcon size={40} style={{ margin: '0 auto 10px', display: 'block', strokeWidth: 1 }} />
+                  <p style={{ fontSize: '0.85rem' }}>La galleria è vuota. Aggiungi la tua prima foto!</p>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                  gap: '12px'
+                }}>
                   {galleryImages.map((img) => (
                     <div
                       key={img.id}
-                      className="glass-panel"
                       style={{
+                        position: 'relative',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        aspectRatio: '1 / 1',
+                        border: editingImageId === img.id ? '2px solid #14b8a6' : '1px solid #e2e8f0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                        background: '#f8fafc',
                         display: 'flex',
-                        gap: '16px',
-                        padding: '12px',
-                        borderRadius: '14px',
-                        alignItems: 'center',
-                        background: editingImageId === img.id ? '#f0fdfa' : 'white',
-                        borderColor: editingImageId === img.id ? '#5eead4' : undefined
+                        flexDirection: 'column'
                       }}
                     >
-                      <div style={{ width: '80px', height: '60px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, border: '1px solid #cbd5e1' }}>
+                      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                         <img
                           src={img.src}
                           alt={img.title}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
+                        <span style={{
+                          position: 'absolute', top: '6px', left: '6px',
+                          background: 'rgba(15, 118, 110, 0.95)', color: 'white',
+                          fontSize: '0.6rem', fontWeight: 800, padding: '2px 8px', borderRadius: '999px'
+                        }}>
+                          {img.category}
+                        </span>
                       </div>
                       
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <span style={{
-                            fontSize: '0.65rem',
-                            fontWeight: 800,
-                            color: '#0f766e',
-                            background: 'rgba(15, 118, 110, 0.08)',
-                            padding: '2px 8px',
-                            borderRadius: '999px'
-                          }}>
-                            {img.category}
-                          </span>
-                          <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f2d2a', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {img.title}
-                          </h4>
-                        </div>
-                        <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ padding: '8px', background: 'white', borderTop: '1px solid #f1f5f9' }}>
+                        <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f2d2a', margin: '0 0 2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={img.title}>
+                          {img.title}
+                        </h4>
+                        <p style={{ fontSize: '0.7rem', color: '#64748b', margin: '0 0 8px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {img.desc || 'Nessuna descrizione.'}
                         </p>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleStartEditImage(img)}
-                          style={{
-                            border: 'none',
-                            background: '#f1f5f9',
-                            color: '#475569',
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          title="Modifica Foto"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteImage(img.id)}
-                          style={{
-                            border: 'none',
-                            background: '#fee2e2',
-                            color: '#ef4444',
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          title="Elimina Foto"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditImage(img)}
+                            className="btn btn-secondary"
+                            style={{
+                              flex: 1,
+                              padding: '5px',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.75rem',
+                              height: '28px'
+                            }}
+                            title="Modifica"
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteImage(img.id)}
+                            className="btn"
+                            style={{
+                              flex: 1,
+                              background: '#fee2e2',
+                              color: '#ef4444',
+                              padding: '5px',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.75rem',
+                              border: 'none',
+                              cursor: 'pointer',
+                              height: '28px'
+                            }}
+                            title="Elimina"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
-
-                  {galleryImages.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '32px', color: '#94a3b8' }}>
-                      <ImageIcon size={48} style={{ margin: '0 auto 12px auto', display: 'block', strokeWidth: 1 }} />
-                      <p style={{ fontSize: '0.85rem' }}>La galleria è vuota. Aggiungi la tua prima foto!</p>
-                    </div>
-                  )}
                 </div>
-              </div>
-
+              )}
             </div>
           </div>
         )}

@@ -116,15 +116,15 @@ const defaultGalleryImages = [
 
 export default function App() {
   // Main Navigation View: 'client' or 'admin'
-  // Persisted in sessionStorage so pull-to-refresh doesn't reset to home
+  // Persisted in localStorage so page refresh doesn't reset to home
   const [viewMode, setViewMode] = useState(() => {
-    return sessionStorage.getItem('webdog_view') || 'client';
+    return localStorage.getItem('webdog_view') || 'client';
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Sync viewMode to sessionStorage on every change
+  // Sync viewMode to localStorage on every change
   useEffect(() => {
-    sessionStorage.setItem('webdog_view', viewMode);
+    localStorage.setItem('webdog_view', viewMode);
   }, [viewMode]);
 
   // Bookings — Firebase Realtime Database with localStorage fallback
