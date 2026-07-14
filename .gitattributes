@@ -1,0 +1,11 @@
+# Normalizza i line endings: LF nel repo, CRLF su Windows al checkout
+* text=auto eol=lf
+
+# Binari — nessuna conversione
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.svg binary
+*.ico binary
+*.pdf binary
