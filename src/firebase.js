@@ -8,6 +8,7 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -30,15 +31,17 @@ export const FIREBASE_CONFIGURED =
 let app      = null;
 let database = null;
 let auth     = null;
+let storage  = null;
 
 if (FIREBASE_CONFIGURED) {
   try {
     app      = initializeApp(firebaseConfig);
     database = getDatabase(app);
     auth     = getAuth(app);
+    storage  = getStorage(app);
   } catch (err) {
     console.warn('[WebDog] Firebase init error:', err.message);
   }
 }
 
-export { database, auth };
+export { database, auth, storage };

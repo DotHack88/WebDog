@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRealtimeBookings } from './hooks/useRealtimeBookings';
+import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useRateLimit } from './hooks/useRateLimit';
 import { validateItalianPhone, validateEmail, validateRequired } from './utils/validation';
 import {
@@ -101,7 +102,7 @@ const defaultBookings = [
 ];
 
 // Image Gallery data
-const galleryImages = [
+const defaultGalleryImages = [
   { id: 1, src: '/gallery_walk.png', category: 'Passeggiate', title: 'Passeggiata Educativa nei Boschi', desc: 'Socializzazione e movimento all\'aperto.' },
   { id: 2, src: '/gallery_sitting.png', category: 'Dog Sitting', title: 'Riposo confortevole sul divano', desc: 'Ambiente casalingo sicuro e rilassante.' },
   { id: 3, src: '/gallery_training.png', category: 'Educazione', title: 'Focalizzazione e Agility', desc: 'Addestramento stimolante con rinforzo positivo.' },
@@ -128,6 +129,15 @@ export default function App() {
 
   // Bookings — Firebase Realtime Database with localStorage fallback
   const { bookings, addBooking, updateBooking, deleteBookingById, syncStatus } = useRealtimeBookings(defaultBookings);
+
+  // Gallery — Firebase Realtime Database with localStorage fallback
+  const {
+    galleryImages,
+    addGalleryImage,
+    updateGalleryImage,
+    deleteGalleryImageById,
+    gallerySyncStatus
+  } = useRealtimeGallery(defaultGalleryImages);
 
   // Rate limiting — protegge i form da invii multipli / spam
   const bookingRateLimit = useRateLimit('booking', { maxPerWindow: 3, windowMs: 15 * 60 * 1000, cooldownMs: 60 * 1000 });
@@ -886,6 +896,36 @@ Messaggio: ${contactForm.message}`
     );
   };
 
+  const addGalleryImageWithToast = async (newImage) => {
+    await addGalleryImage(newImage);
+    triggerToast(
+      'Foto Aggiunta',
+      'La nuova immagine è stata inserita con successo nella galleria.',
+      'success',
+      'Galleria'
+    );
+  };
+
+  const updateGalleryImageWithToast = async (id, changes) => {
+    await updateGalleryImage(id, changes);
+    triggerToast(
+      'Foto Aggiornata',
+      'I dettagli della foto sono stati salvati.',
+      'success',
+      'Galleria'
+    );
+  };
+
+  const deleteGalleryImageWithToast = async (id) => {
+    await deleteGalleryImageById(id);
+    triggerToast(
+      'Foto Rimossa',
+      'L\'immagine è stata eliminata dalla galleria.',
+      'warning',
+      'Galleria'
+    );
+  };
+
   const getDaysCount = (startDateStr, endDateStr) => {
     if (!startDateStr || !endDateStr) return 1;
     const start = new Date(startDateStr);
@@ -1185,6 +1225,11 @@ Messaggio: ${contactForm.message}`
           notificationLogs={notificationLogs}
           setNotificationLogs={setNotificationLogs}
           syncStatus={syncStatus}
+          galleryImages={galleryImages}
+          addGalleryImage={addGalleryImageWithToast}
+          updateGalleryImage={updateGalleryImageWithToast}
+          deleteGalleryImage={deleteGalleryImageWithToast}
+          gallerySyncStatus={gallerySyncStatus}
           onClose={() => setViewMode('client')}
         />
         <NotificationToast toasts={toasts} removeToast={removeToast} />

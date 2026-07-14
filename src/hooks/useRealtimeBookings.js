@@ -19,7 +19,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ref, onValue, push, update, remove
 } from 'firebase/database';
-import { database, FIREBASE_CONFIGURED } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, database, FIREBASE_CONFIGURED } from '../firebase';
 
 const LS_KEY = 'webdog_bookings';
 
@@ -62,40 +63,53 @@ export function useRealtimeBookings(defaultBookings) {
 
   // ── Firebase real-time listener ──────────────────────────
   useEffect(() => {
-    if (!FIREBASE_CONFIGURED || !database) return;
+    if (!FIREBASE_CONFIGURED || !database || !auth) return;
 
-    const dbRef = ref(database, 'bookings');
-    let seeded = false;
+    let unsubscribeOnValue = null;
 
-    const unsubscribe = onValue(
-      dbRef,
-      (snapshot) => {
-        const remote = fromFirebase(snapshot);
-
-        if (remote.length === 0 && !seeded) {
-          // First run: seed Firebase with existing localStorage data so the
-          // operator doesn't lose existing bookings on first connection.
-          seeded = true;
-          const existing = readLS(defaultBookings);
-          existing.forEach((booking) => {
-            const { firebaseKey: _fk, ...clean } = booking; // strip stale key
-            push(dbRef, clean);
-          });
-          return; // onValue will fire again after the seed push
-        }
-
-        seeded = true;
-        setBookings(remote);
-        writeLS(remote);
-        setSyncStatus('synced');
-      },
-      (error) => {
-        console.warn('[WebDog] Firebase onValue error:', error.message);
-        setSyncStatus('error');
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      // Clean up previous listener
+      if (unsubscribeOnValue) {
+        unsubscribeOnValue();
+        unsubscribeOnValue = null;
       }
-    );
 
-    return () => unsubscribe();
+      const dbRef = ref(database, 'bookings');
+      let seeded = false;
+
+      unsubscribeOnValue = onValue(
+        dbRef,
+        (snapshot) => {
+          const remote = fromFirebase(snapshot);
+
+          if (remote.length === 0 && !seeded) {
+            // First run: seed Firebase with existing localStorage data so the
+            // operator doesn't lose existing bookings on first connection.
+            seeded = true;
+            const existing = readLS(defaultBookings);
+            existing.forEach((booking) => {
+              const { firebaseKey: _fk, ...clean } = booking; // strip stale key
+              push(dbRef, clean);
+            });
+            return; // onValue will fire again after the seed push
+          }
+
+          seeded = true;
+          setBookings(remote);
+          writeLS(remote);
+          setSyncStatus('synced');
+        },
+        (error) => {
+          console.warn('[WebDog] Firebase onValue error:', error.message);
+          setSyncStatus('error');
+        }
+      );
+    });
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeOnValue) unsubscribeOnValue();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
