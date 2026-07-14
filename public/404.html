@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pagina non trovata — WebDog Napoli</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(15, 118, 110, 0.1);
+      border: 1px solid rgba(15, 118, 110, 0.08);
+    }
+    .emoji { font-size: 4rem; margin-bottom: 16px; display: block; }
+    h1 { font-size: 1.6rem; font-weight: 800; color: #042f2e; margin-bottom: 12px; }
+    p  { font-size: 1rem; color: #64748b; line-height: 1.6; margin-bottom: 32px; }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #0f766e, #14b8a6);
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 14px 32px;
+      border-radius: 9999px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.88; }
+    .code { font-size: 5rem; font-weight: 900; color: #e2e8f0; line-height: 1; margin-bottom: 8px; }
+  </style>
+  <!-- Redirect automatico dopo 5 secondi -->
+  <script>
+    setTimeout(function() { window.location.href = '/'; }, 5000);
+  </script>
+</head>
+<body>
+  <div class="card">
+    <span class="emoji">🐾</span>
+    <div class="code">404</div>
+    <h1>Pagina non trovata</h1>
+    <p>
+      Questa pagina non esiste o è stata spostata.<br>
+      Sarai reindirizzato alla home tra pochi secondi.
+    </p>
+    <a href="/" class="btn">Torna alla Home</a>
+    <p style="margin-top: 20px; font-size: 0.75rem; color: #94a3b8;">
+      © 2026 WebDog Napoli · Educatore Cinofilo a Napoli e Provincia
+    </p>
+  </div>
+</body>
+</html>

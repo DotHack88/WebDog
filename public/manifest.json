@@ -1,0 +1,45 @@
+{
+  "name": "WebDog Napoli — Educatore Cinofilo",
+  "short_name": "WebDog",
+  "description": "Servizi cinofili professionali a Napoli e Provincia: dog sitting, passeggiate educative, navetta e educazione base.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0fdfa",
+  "theme_color": "#0f766e",
+  "orientation": "portrait-primary",
+  "lang": "it",
+  "categories": ["lifestyle", "health", "pets"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/webdog_walkthrough.webp",
+      "type": "image/webp",
+      "sizes": "1280x800",
+      "form_factor": "wide",
+      "label": "Schermata principale WebDog"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Prenota Ora",
+      "short_name": "Prenota",
+      "description": "Vai direttamente al form di prenotazione",
+      "url": "/#prenotazioni",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Contattaci",
+      "short_name": "Contatti",
+      "description": "Scrivi un messaggio a WebDog",
+      "url": "/#contatti",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}
