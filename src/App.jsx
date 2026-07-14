@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRealtimeBookings } from './hooks/useRealtimeBookings';
+import { useRateLimit } from './hooks/useRateLimit';
+import { validateItalianPhone, validateEmail, validateRequired } from './utils/validation';
 import {
-  Dog, Activity, Calendar, DollarSign, Phone, Shield, Heart, Award,
+  Phone, Heart, Award,
   FileText, Check, ChevronLeft, ChevronRight, Star, MapPin, Mail,
-  Send, MessageSquare, Menu, X, Sliders, Eye, Sparkles, Copy
+  Send, MessageSquare, X, Eye, Sparkles, Copy
 } from 'lucide-react';
 import AdminPortal from './components/AdminPortal';
 import NotificationToast from './components/NotificationToast';
+import NavBar from './components/sections/NavBar';
+import ServicesSection from './components/sections/ServicesSection';
+import FaqSection from './components/sections/FaqSection';
+import ZoneSection from './components/sections/ZoneSection';
+import FooterSection from './components/sections/FooterSection';
 
 // Default seeded reviews
 const defaultReviews = [
@@ -116,6 +123,10 @@ export default function App() {
 
   // Bookings — Firebase Realtime Database with localStorage fallback
   const { bookings, addBooking, updateBooking, deleteBookingById, syncStatus } = useRealtimeBookings(defaultBookings);
+
+  // Rate limiting — protegge i form da invii multipli / spam
+  const bookingRateLimit = useRateLimit('booking', { maxPerWindow: 3, windowMs: 15 * 60 * 1000, cooldownMs: 60 * 1000 });
+  const contactRateLimit = useRateLimit('contact', { maxPerWindow: 5, windowMs: 15 * 60 * 1000, cooldownMs: 30 * 1000 });
 
   const [reviews, setReviews] = useState(() => {
     const saved = localStorage.getItem('webdog_reviews');
@@ -239,16 +250,16 @@ export default function App() {
       const saved = localStorage.getItem('webdog_email_config');
       const config = saved ? JSON.parse(saved) : {
         method: 'emailjs',
-        emailjsServiceId: 'service_77dn8u2',
-        emailjsTemplateId: 'template_k3sc8sn',
-        emailjsPublicKey: '6n8JEdiKSucjPCKmR',
-        adminEmail: 'emanuelebarese@gmail.com'
+        emailjsServiceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || '',
+        emailjsTemplateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '',
+        emailjsPublicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '',
+        adminEmail: import.meta.env.VITE_ADMIN_EMAIL || ''
       };
 
-      if (config.method !== 'emailjs') return; // only auto-send when EmailJS is configured
+      if (config.method !== 'emailjs') return;
       if (!config.emailjsServiceId || !config.emailjsTemplateId || !config.emailjsPublicKey) return;
 
-      const adminEmail = config.adminEmail || 'emanuelebarese@gmail.com';
+      const adminEmail = config.adminEmail || import.meta.env.VITE_ADMIN_EMAIL || '';
       const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -299,6 +310,38 @@ export default function App() {
   // Form Booking handler
   const handleBookingSubmit = (e) => {
     e.preventDefault();
+
+    // ── Anti-spam: rate limiting ──────────────────────────────
+    if (!bookingRateLimit.canSubmit) {
+      const msg = bookingRateLimit.attemptsLeft === 0
+        ? `Hai raggiunto il limite di prenotazioni. Riprova tra ${bookingRateLimit.remainingSeconds}s.`
+        : `Attendi ${bookingRateLimit.remainingSeconds}s prima di inviare un'altra prenotazione.`;
+      triggerToast('Troppe Richieste', msg, 'error', 'Anti-Spam');
+      return;
+    }
+
+    // ── Validazione campi ─────────────────────────────────────
+    const phoneCheck = validateItalianPhone(bookingForm.phone);
+    if (!phoneCheck.valid) {
+      triggerToast('Numero non valido', phoneCheck.message, 'error', 'Validazione');
+      return;
+    }
+    const emailCheck = validateEmail(bookingForm.email);
+    if (!emailCheck.valid) {
+      triggerToast('Email non valida', emailCheck.message, 'error', 'Validazione');
+      return;
+    }
+    const nameCheck = validateRequired(bookingForm.firstName, 'Il nome', 2);
+    if (!nameCheck.valid) {
+      triggerToast('Nome mancante', nameCheck.message, 'error', 'Validazione');
+      return;
+    }
+    const dogCheck = validateRequired(bookingForm.dogName, 'Il nome del cane', 2);
+    if (!dogCheck.valid) {
+      triggerToast('Nome cane mancante', dogCheck.message, 'error', 'Validazione');
+      return;
+    }
+
     if (!bookingForm.gdpr) {
       triggerToast('Errore Privacy', 'Devi accettare l\'informativa privacy GDPR.', 'error', 'System');
       return;
@@ -312,12 +355,14 @@ export default function App() {
       return;
     }
 
+    // Registra l'invio per il rate limiter
+    bookingRateLimit.recordSubmit();
+
     const newBooking = {
       id: 'b_' + Date.now(),
       ...bookingForm,
       status: 'pending'
     };
-
     // ✅ Firebase real-time sync — appears on admin panel on any device instantly
     addBooking(newBooking);
 
@@ -607,7 +652,41 @@ Note: ${bookingForm.notes || 'Nessuna nota'}`
   // Quick message contact submit
   const handleContactSubmit = (e) => {
     e.preventDefault();
-    
+
+    // ── Anti-spam: rate limiting ──────────────────────────────
+    if (!contactRateLimit.canSubmit) {
+      const msg = contactRateLimit.attemptsLeft === 0
+        ? `Hai raggiunto il limite di messaggi. Riprova tra ${contactRateLimit.remainingSeconds}s.`
+        : `Attendi ${contactRateLimit.remainingSeconds}s prima di inviare un altro messaggio.`;
+      triggerToast('Troppe Richieste', msg, 'error', 'Anti-Spam');
+      return;
+    }
+
+    // ── Validazione campi ─────────────────────────────────────
+    const nameCheck = validateRequired(contactForm.name, 'Il nome', 2);
+    if (!nameCheck.valid) {
+      triggerToast('Nome mancante', nameCheck.message, 'error', 'Validazione');
+      return;
+    }
+    const emailCheck = validateEmail(contactForm.email);
+    if (!emailCheck.valid) {
+      triggerToast('Email non valida', emailCheck.message, 'error', 'Validazione');
+      return;
+    }
+    const phoneCheck = validateItalianPhone(contactForm.phone);
+    if (!phoneCheck.valid) {
+      triggerToast('Numero non valido', phoneCheck.message, 'error', 'Validazione');
+      return;
+    }
+    const msgCheck = validateRequired(contactForm.message, 'Il messaggio', 10);
+    if (!msgCheck.valid) {
+      triggerToast('Messaggio troppo breve', msgCheck.message, 'error', 'Validazione');
+      return;
+    }
+
+    // Registra l'invio per il rate limiter
+    contactRateLimit.recordSubmit();
+
     // Define the email modal parameters
     const emailData = {
       type: 'contact',
@@ -1112,94 +1191,11 @@ Messaggio: ${contactForm.message}`
   return (
     <div>
       {/* -------------------- HEADER / NAVBAR -------------------- */}
-      <header className="glass-panel" style={{
-        position: 'fixed',
-        top: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 'calc(100% - 32px)',
-        maxWidth: '1200px',
-        zIndex: 999,
-        padding: '12px 28px',
-        borderRadius: '9999px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-
-        {/* Logo */}
-        <a href="#home" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: '#0f766e' }}>
-          <span style={{ fontSize: '1.8rem' }}>🐾</span>
-          <div>
-            <h1 style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', lineHeight: 1 }}>WebDog</h1>
-            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Servizi Cinofili Professionali
-            </span>
-          </div>
-        </a>
-
-        {/* Desktop Links */}
-        <nav style={{ display: 'flex', gap: '24px' }} className="desktop-nav">
-          <a href="#about" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Chi Sono</a>
-          <a href="#servizi" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Servizi</a>
-          <a href="#prenotazioni" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Prenotazioni</a>
-          <a href="#recensioni" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Recensioni</a>
-          <a href="#gallery" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Gallery</a>
-          <a href="#contatti" style={{ color: '#0f2d2a', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>Contatti</a>
-        </nav>
-
-        {/* Header CTAs */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }} className="desktop-ctas">
-          <button
-            onClick={() => setViewMode('admin')}
-            className="btn btn-secondary"
-            style={{ padding: '8px 16px', fontSize: '0.8rem', gap: '6px', borderRadius: '999px' }}
-          >
-            <Sliders size={14} /> Gestionale Admin
-          </button>
-
-          <a
-            href="#prenotazioni"
-            className="btn btn-primary"
-            style={{ padding: '8px 20px', fontSize: '0.8rem', borderRadius: '999px' }}
-          >
-            Prenota Ora
-          </a>
-        </div>
-
-        {/* Mobile Hamburger Menu Toggle Button */}
-        <button
-          className={`mobile-menu-toggle ${mobileMenuOpen ? 'open' : ''}`}
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Menu"
-          aria-expanded={mobileMenuOpen}
-        >
-          <span className="line"></span>
-          <span className="line"></span>
-          <span className="line"></span>
-        </button>
-      </header>
-
-      {/* Mobile Overlay Navigation Panel */}
-      <nav className={`mobile-nav-overlay ${mobileMenuOpen ? 'open' : ''}`}>
-        <a href="#about" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Chi Sono</a>
-        <a href="#servizi" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Servizi</a>
-        <a href="#prenotazioni" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Prenotazioni</a>
-        <a href="#recensioni" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Recensioni</a>
-        <a href="#gallery" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Gallery</a>
-        <a href="#contatti" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>Contatti</a>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
-          <a
-            href="#prenotazioni"
-            className="btn btn-primary"
-            style={{ padding: '12px 20px', fontSize: '0.95rem', borderRadius: '999px', textAlign: 'center' }}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Prenota Ora
-          </a>
-        </div>
-      </nav>
+      <NavBar
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        onAdminClick={() => setViewMode('admin')}
+      />
 
 
       {/* -------------------- HERO SECTION -------------------- */}
@@ -1471,6 +1467,8 @@ Messaggio: ${contactForm.message}`
                 <img
                   src="/chi_sono_profile.jpg"
                   alt="Emanuele Barese — Educatore Cinofilo a Napoli e Provincia"
+                  loading="lazy"
+                  decoding="async"
                   style={{ width: '100%', height: 'auto', display: 'block' }}
                 />
               </div>
@@ -1617,216 +1615,7 @@ Messaggio: ${contactForm.message}`
 
 
       {/* -------------------- SERVIZI (SERVICES) -------------------- */}
-      <section id="servizi" className="section-padding" style={{ background: 'white' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <span className="badge">🐾 SERVIZI OFFERTI</span>
-            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Servizi Professionali su Misura</h2>
-            <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: '560px', margin: '8px auto 0 auto' }}>
-              Ogni cane ha necessità differenti. Offriamo formule personalizzabili per la cura quotidiana e la crescita educativa.
-            </p>
-          </div>
-
-          {/* ---- CATEGORIA 1: Presso la casa del Sitter ---- */}
-          <div style={{ marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <span style={{ fontSize: '1.6rem' }}>🏡</span>
-              <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#042f2e' }}>Presso la casa del Sitter</h3>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-              {/* Dog Sitting Diurno */}
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>☀️ Dog Sitting Diurno</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Il tuo cane passa la giornata a casa mia, in un ambiente sicuro e accogliente. Perfetto per non lasciarlo solo mentre sei al lavoro.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ Durata: <strong>Mezza Giornata</strong></p>
-                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€25</strong></p>
-                  </div>
-                </div>
-                <button onClick={() => handleServiceSelect('Dog Sitting Diurno (Sitter)')} className="btn btn-primary" style={{ width: '100%' }}>
-                  Prenota Ora
-                </button>
-              </div>
-              {/* Dog Sitting Pensione */}
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🌙 Dog Sitting Pensione</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Un vero e proprio soggiorno con pernottamento. Il tuo cane farà parte della famiglia per tutta la notte, circondato da comfort, affetto e attenzioni.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ Durata: <strong>24 ore (con pernottamento incluso)</strong></p>
-                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€35</strong></p>
-                  </div>
-                </div>
-                <button onClick={() => handleServiceSelect('Dog Sitting Pensione (Sitter)')} className="btn btn-primary" style={{ width: '100%' }}>
-                  Prenota Ora
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ---- CATEGORIA 2: Presso l'abitazione del Cliente ---- */}
-          <div style={{ marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <span style={{ fontSize: '1.6rem' }}>🦮</span>
-              <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#042f2e' }}>Presso l'abitazione del Cliente</h3>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-              {/* Dog Sitting Diurno */}
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🏠 Dog Sitting Diurno</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Vengo io da te per accudire il tuo cane direttamente nel suo ambiente domestico durante il giorno. Meno stress per lui, massima comodità per te.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ Durata: <strong>Mezza Giornata / Giornata intera</strong></p>
-                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€20 / €40</strong></p>
-                  </div>
-                </div>
-                <button onClick={() => handleServiceSelect('Dog Sitting Diurno (Domicilio)')} className="btn btn-primary" style={{ width: '100%' }}>
-                  Prenota Ora
-                </button>
-              </div>
-              {/* Dog Sitting a domicilio Pensione */}
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🛌 Dog Sitting Pensione</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Servizio di "house-sitting". Resto a dormire a casa tua per garantire al cane la continuità delle sue abitudini e una presenza costante anche di notte.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ Durata: <strong>24 ore (con pernottamento incluso)</strong></p>
-                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€50</strong></p>
-                  </div>
-                </div>
-                <button onClick={() => handleServiceSelect('Dog Sitting Pensione')} className="btn btn-primary" style={{ width: '100%' }}>
-                  Prenota Ora
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ---- CATEGORIA 3: In Giro per la Città ---- */}
-          <div style={{ marginBottom: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <span style={{ fontSize: '1.6rem' }}>🌳</span>
-              <h3 style={{ fontWeight: 800, fontSize: '1.3rem', color: '#042f2e' }}>In Giro per la Città</h3>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🦮 Dog Walking (Passeggiata Cani)</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Un'uscita dedicata al movimento, al gioco e ai bisognini del tuo cane, per spezzare la sua giornata in totale sicurezza.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ 30 minuti &nbsp; | &nbsp; 💰 <strong>€20</strong></p>
-                    <p style={{ marginTop: '6px' }}>⏱️ 60 minuti &nbsp; | &nbsp; 💰 <strong>€35</strong></p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => handleServiceSelect('Dog Walking (30m)')} className="btn btn-primary" style={{ flex: 1, fontSize: '0.85rem' }}>
-                    30 min
-                  </button>
-                  <button onClick={() => handleServiceSelect('Dog Walking (60m)')} className="btn btn-secondary" style={{ flex: 1, fontSize: '0.85rem' }}>
-                    60 min
-                  </button>
-                </div>
-              </div>
-              {/* Servizio Matrimonio */}
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>💍 Wedding Dog Sitter</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Il tuo migliore amico può esserci anche il giorno del tuo matrimonio! Servizio dedicato per i momenti più importanti della cerimonia.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ Durata: <strong>Mezza Giornata / Giornata intera</strong></p>
-                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>A Partire da €150 mezza giornata / €250 giornata intera</strong></p>
-                    <p style={{ marginTop: '4px' }}> 🐾 Servizio personalizzato in base alle tue esigenze e alle necessità del tuo cane.</p>
-                  </div>
-                </div>
-                <button onClick={() => handleServiceSelect('Wedding Dog Sitter')} className="btn btn-primary" style={{ width: '100%' }}>
-                  Prenota Ora
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ---- CATEGORIA 4+: Navetta, Educazione, Consulenza ---- */}
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-              {/* Navetta */}
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '1.4rem' }}>🚌</span>
-                    <span style={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Servizio Navetta</span>
-                  </div>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🚗 Trasporto Professionale</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Trasporto professionale ed in sicurezza del cane presso veterinario, toelettatura o centri specializzati.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ Destinazione: <strong>Veterinario / Toeletta / Centro</strong></p>
-                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>Da €15</strong></p>
-                  </div>
-                </div>
-                <button onClick={() => handleServiceSelect('Servizio Navetta')} className="btn btn-primary" style={{ width: '100%' }}>
-                  Prenota Ora
-                </button>
-              </div>
-              {/* Educazione Base */}
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '1.4rem' }}>🎓</span>
-                    <span style={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Educazione</span>
-                  </div>
-                  <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}></span>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🦮Educazione Base</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Sessioni di educazione per migliorare l'intesa cane-conduttore, i comandi di base, il richiamo ed autocontrollo.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ Durata: <strong>60 minuti a sessione</strong></p>
-                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€30 a sessione</strong></p>
-                  </div>
-                </div>
-                <button onClick={() => handleServiceSelect('Educazione Base')} className="btn btn-primary" style={{ width: '100%' }}>
-                  Prenota Ora
-                </button>
-              </div>
-              {/* Consulenza Pre-Adozione */}
-              <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '1.4rem' }}>📋</span>
-                    <span style={{ fontWeight: 700, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Consulenza</span>
-                  </div>
-                  <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: '#042f2e' }}>🐾 Consulenza Pre-Adozione</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '8px 0 14px 0' }}>
-                    Ti guidiamo nella scelta della razza o del cane ideale in canile in base al tuo stile di vita e spazi disponibili.
-                  </p>
-                  <div style={{ fontSize: '0.85rem', background: '#f1f5f9', padding: '10px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <p>⏱️ Durata: <strong>45 minuti a sessione</strong></p>
-                    <p style={{ marginTop: '4px' }}>💰 Prezzo: <strong>€25 a sessione</strong></p>
-                  </div>
-                </div>
-                <button onClick={() => handleServiceSelect('Consulenza Pre-Adozione')} className="btn btn-primary" style={{ width: '100%' }}>
-                  Prenota Ora
-                </button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
+      <ServicesSection onServiceSelect={handleServiceSelect} />
 
       {/* -------------------- PRENOTAZIONI ONLINE & CALENDARIO -------------------- */}
       <section id="prenotazioni" className="section-padding" style={{ background: '#f0fdfa' }}>
@@ -2238,8 +2027,20 @@ Messaggio: ${contactForm.message}`
                   </label>
                 </div>
 
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
-                  Conferma Prenotazione
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={!bookingRateLimit.canSubmit}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    opacity: bookingRateLimit.canSubmit ? 1 : 0.6,
+                    cursor: bookingRateLimit.canSubmit ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  {bookingRateLimit.canSubmit
+                    ? 'Conferma Prenotazione'
+                    : `Attendi ${bookingRateLimit.remainingSeconds}s…`}
                 </button>
               </form>
             </div>
@@ -2371,7 +2172,7 @@ Messaggio: ${contactForm.message}`
                     />
                     {reviewForm.photo && (
                       <div style={{ marginTop: '10px' }}>
-                        <img src={reviewForm.photo} alt="Anteprima" style={{ height: '80px', borderRadius: '8px', objectFit: 'cover' }} />
+                        <img src={reviewForm.photo} alt="Anteprima" loading="lazy" decoding="async" style={{ height: '80px', borderRadius: '8px', objectFit: 'cover' }} />
                       </div>
                     )}
                   </div>
@@ -2431,7 +2232,7 @@ Messaggio: ${contactForm.message}`
 
                   {rev.photo && (
                     <div style={{ marginTop: '16px' }}>
-                      <img src={rev.photo} alt={`Foto caricata da ${rev.name}`} style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px' }} />
+                      <img src={rev.photo} alt={`Foto caricata da ${rev.name}`} loading="lazy" decoding="async" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px' }} />
                     </div>
                   )}
 
@@ -2510,6 +2311,8 @@ Messaggio: ${contactForm.message}`
                   <img
                     src={img.src}
                     alt={img.title}
+                    loading="lazy"
+                    decoding="async"
                     style={{
                       width: '100%',
                       height: '100%',
@@ -2558,6 +2361,7 @@ Messaggio: ${contactForm.message}`
               className="lightbox-img"
               src={filteredGallery[lightboxIndex].src}
               alt={filteredGallery[lightboxIndex].title}
+              decoding="async"
             />
 
             {/* Caption */}
@@ -2579,127 +2383,10 @@ Messaggio: ${contactForm.message}`
 
 
       {/* -------------------- ZONE SERVITE -------------------- */}
-      <section id="zone" style={{ background: 'white', padding: '64px 0' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <span className="badge">📍 COPERTURA TERRITORIALE</span>
-            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Zone Servite — 50 km da Arzano</h2>
-            <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: '680px', margin: '8px auto 0 auto' }}>
-              Con base ad <strong style={{ color: '#0f766e' }}>Arzano (NA)</strong>, copriamo <strong style={{ color: '#0f766e' }}>67 zone</strong> tra Napoli e Provincia in un raggio di 50 km — dall'area flegrea e casertana al Vesuvio, dall'area nolana alla costa.
-            </p>
-          </div>
-
-          {/* Epicenter badge */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '36px' }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '12px',
-              background: 'linear-gradient(135deg, #f0fdfa, #e0f2fe)',
-              border: '2px solid rgba(15,118,110,0.25)',
-              borderRadius: '16px', padding: '14px 28px',
-              boxShadow: '0 4px 16px rgba(15,118,110,0.1)'
-            }}>
-              <span style={{ fontSize: '1.8rem' }}>📍</span>
-              <div>
-                <p style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#042f2e' }}>Arzano (NA) — Base Operativa</p>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>67 zone coperte · Raggio 50 km · Napoli e Provincia</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Grouped areas */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {[
-              {
-                area: '⭐ Area Nord — Immediata (Base)',
-                color: '#0f766e', bg: '#f0fdfa',
-                cities: ['Arzano', 'Frattamaggiore', 'Frattaminore', 'Aversa', "Sant'Arpino", 'Casoria', 'Casavatore', 'Afragola', 'Cardito', 'Caivano', 'Crispano', 'Grumo Nevano', "Sant'Antimo", 'Melito di Napoli', 'Casandrino', 'Mugnano di Napoli', 'Calvizzano', 'Napoli']
-              },
-              {
-                area: '🏙️ Napoli Città',
-                color: '#1d4ed8', bg: '#eff6ff',
-                cities: ['Napoli (tutti i quartieri)', 'Posillipo', 'San Giovanni a Teduccio']
-              },
-              {
-                area: '🌊 Area Flegrea & Ovest',
-                color: '#0369a1', bg: '#f0f9ff',
-                cities: ['Giugliano in Campania', 'Lago Patria', 'Varcaturo', 'Licola', 'Quarto', 'Monterusciello', 'Qualiano', 'Villaricca', 'Marano di Napoli', 'Pozzuoli', 'Bacoli', 'Baia', 'Miseno', 'Torregaveta', 'Monte di Procida', 'Pisani']
-              },
-              {
-                area: '🏭 Area Est & Nolana',
-                color: '#7c3aed', bg: '#faf5ff',
-                cities: ["Pomigliano d'Arco", 'Acerra', 'Casalnuovo di Napoli', 'Marigliano', 'Mariglianella', 'Brusciano', 'Nola', 'Carbonara di Nola', 'Cicciano', 'Scisciano', 'San Vitaliano', 'San Paolo Bel Sito', 'San Gennaro Vesuviano', 'San Giuseppe Vesuviano', 'Saviano', 'Ottaviano']
-              },
-              {
-                area: '🌋 Area Vesuviana',
-                color: '#b45309', bg: '#fffbeb',
-                cities: ['Portici', 'San Giorgio a Cremano', 'San Sebastiano al Vesuvio', 'Ercolano', 'Cercola', 'Volla', 'Pollena Trocchia', "Sant'Anastasia", 'Somma Vesuviana', 'Torre del Greco', 'Torre Annunziata', 'Boscoreale', 'Boscotrecase', 'Trecase', 'Terzigno', 'Poggiomarino']
-              },
-            ].map(({ area, color, bg, cities }) => (
-              <div key={area} style={{ background: bg, borderRadius: '16px', padding: '20px 24px', border: `1px solid ${color}22` }}>
-                <h3 style={{ fontWeight: 800, fontSize: '0.95rem', color, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {area}
-                </h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {cities.map(city => (
-                    <span key={city} style={{
-                      background: 'white',
-                      border: `1px solid ${color}33`,
-                      color: '#334155',
-                      padding: '4px 12px',
-                      borderRadius: '9999px',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-                    }}>
-                      {city}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '32px' }}>
-            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '16px' }}>
-              Non trovi il tuo comune? Contattaci — valutiamo sempre ogni richiesta!
-            </p>
-            <a href="https://wa.me/393467251989" className="btn btn-primary" style={{ gap: '8px' }}>
-              💬 Chiedi disponibilità su WhatsApp
-            </a>
-          </div>
-        </div>
-      </section>
-
+      <ZoneSection />
 
       {/* -------------------- FAQ -------------------- */}
-      <section id="faq" style={{ background: '#f0fdfa', padding: '80px 0' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <span className="badge">❓ DOMANDE FREQUENTI</span>
-            <h2 className="section-title" style={{ margin: '8px 0 0 0' }}>Hai Domande? Abbiamo le Risposte</h2>
-            <p style={{ color: '#64748b', fontSize: '1rem', maxWidth: '560px', margin: '8px auto 0 auto' }}>
-              Tutto quello che devi sapere prima di prenotare un servizio WebDog a Napoli e Provincia.
-            </p>
-          </div>
-          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {[
-              { q: 'Quanto costa il dog sitting a Napoli?', a: 'Il dog sitting diurno parte da €20 a mezza giornata presso il tuo domicilio, o €25 presso casa nostra. Il pernottamento (pensione) è da €35 a notte. Ogni servizio è personalizzabile in base alle tue esigenze.' },
-              { q: 'Quali zone di Napoli coprite?', a: 'Con base ad Arzano (NA), opero in un raggio di 35 km che copre tutta Napoli e provincia: Casoria, Afragola, Frattamaggiore, Giugliano, Acerra, Aversa, Pozzuoli, Portici, Ercolano, Torre del Greco, Nola, Caserta, Pompei e Castellammare di Stabia. Per qualsiasi altro comune contattaci direttamente.' },
-              { q: 'Come faccio a prenotare?', a: 'Puoi prenotare direttamente dal sito cliccando "Prenota Ora", selezionando un giorno verde disponibile nel calendario e compilando il modulo. Riceverai conferma via email e verrai contattato entro 24 ore.' },
-              { q: 'Emanuele è un educatore certificato?', a: 'Sì! Emanuele Barese è Educatore Cinofilo Certificato CSEN (Iscrizione Albo Nazionale n. 42081, riconosciuto CONI) e usa esclusivamente metodi basati sul rinforzo positivo, senza coercizione.' },
-              { q: 'Gestite anche cuccioli?', a: 'Certo! Gestiamo cuccioli di tutte le età. Offriamo sessioni specifiche di Puppy Class per cuccioli dai 3 ai 6 mesi, fondamentali per la socializzazione precoce e la prevenzione di problemi comportamentali.' },
-              { q: 'Fate il servizio navetta ?', a: 'Sì, il Servizio Navetta è disponibile per trasportare il tuo cane in sicurezza presso veterinari, toelettatori o centri specializzati a Napoli e Provincia. Il prezzo parte da €15.' },
-            ].map(({ q, a }, idx) => (
-              <div key={idx} className="glass-card" style={{ padding: '20px 24px' }}>
-                <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#042f2e', marginBottom: '8px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <span style={{ color: '#0f766e', flexShrink: 0 }}>Q.</span> {q}
-                </h3>
-                <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.65, margin: 0, paddingLeft: '22px' }}>{a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FaqSection />
 
       {/* -------------------- CONTATTI & MAPPA (CONTACTS) -------------------- */}
 
@@ -2879,8 +2566,21 @@ Messaggio: ${contactForm.message}`
                   />
                 </div>
 
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', gap: '10px' }}>
-                  <Send size={16} /> Invia Messaggio
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={!contactRateLimit.canSubmit}
+                  style={{
+                    width: '100%',
+                    gap: '10px',
+                    opacity: contactRateLimit.canSubmit ? 1 : 0.6,
+                    cursor: contactRateLimit.canSubmit ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  <Send size={16} />
+                  {contactRateLimit.canSubmit
+                    ? 'Invia Messaggio'
+                    : `Attendi ${contactRateLimit.remainingSeconds}s…`}
                 </button>
               </form>
             </div>
@@ -2890,126 +2590,7 @@ Messaggio: ${contactForm.message}`
       </section>
 
       {/* -------------------- FOOTER -------------------- */}
-      <footer style={{ background: '#042f2e', color: 'white', padding: '56px 0 24px 0' }}>
-        <div className="container">
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '36px',
-            marginBottom: '40px'
-          }}>
-            {/* Brand + Social */}
-            <div>
-              <h4 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: '8px' }}>🐾 WebDog Napoli</h4>
-              <p style={{ fontSize: '0.8rem', color: '#99f6e4', lineHeight: 1.6, marginBottom: '20px' }}>
-                Educatore cinofilo certificato CSEN a Napoli e Provincia. Dog sitting, passeggiate, navetta ed educazione base con amore.
-              </p>
-              {/* ── Social Links ── inserisci i tuoi URL nei commenti ── */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[
-                  {
-                    label: '📸 Instagram',
-                    /* ← SOSTITUIRE con il tuo link Instagram, es: https://www.instagram.com/webdog.napoli */
-                    href: 'https://www.instagram.com/',
-                    hoverBg: 'rgba(225,48,108,0.35)'
-                  },
-                  {
-                    label: '👍 Facebook',
-                    /* ← SOSTITUIRE con la tua pagina Facebook, es: https://www.facebook.com/webdognapoli */
-                    href: 'https://www.facebook.com/',
-                    hoverBg: 'rgba(24,119,242,0.35)'
-                  },
-                  {
-                    label: '🎵 TikTok',
-                    /* ← SOSTITUIRE con il tuo profilo TikTok, es: https://www.tiktok.com/@webdognapoli */
-                    href: 'https://www.tiktok.com/',
-                    hoverBg: 'rgba(255,255,255,0.2)'
-                  }
-                ].map(({ label, href, hoverBg }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '5px',
-                      background: 'rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(255,255,255,0.18)',
-                      color: '#f0fdfa', padding: '6px 12px',
-                      borderRadius: '8px', fontSize: '0.78rem',
-                      fontWeight: 700, textDecoration: 'none',
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.background = hoverBg}
-                    onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                  >
-                    {label}
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick links */}
-            <div>
-              <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Link Rapidi</h5>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
-                <li><a href="#home" style={{ color: '#99f6e4', textDecoration: 'none' }}>🏠 Home</a></li>
-                <li><a href="#about" style={{ color: '#99f6e4', textDecoration: 'none' }}>👤 Chi Sono</a></li>
-                <li><a href="#servizi" style={{ color: '#99f6e4', textDecoration: 'none' }}>🐾 Servizi</a></li>
-                <li><a href="#prenotazioni" style={{ color: '#99f6e4', textDecoration: 'none' }}>📅 Prenotazioni</a></li>
-                <li><a href="#recensioni" style={{ color: '#99f6e4', textDecoration: 'none' }}>⭐ Recensioni</a></li>
-                <li><a href="#contatti" style={{ color: '#99f6e4', textDecoration: 'none' }}>📞 Contatti</a></li>
-              </ul>
-            </div>
-
-            {/* Orari */}
-            <div>
-              <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Orari Servizi</h5>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', color: '#99f6e4' }}>
-                <li>🕗 Lunedì - Venerdì: 08:00 – 20:00</li>
-                <li>🕗 Sabato: 09:00 – 18:00</li>
-                <li>🕗 Domenica: Su prenotazione</li>
-              </ul>
-              <p style={{ fontSize: '0.75rem', color: '#5eead4', marginTop: '14px' }}>
-                📍 Napoli e Provincia
-              </p>
-              <a
-                href="tel:+393467251989"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '10px', color: '#2dd4bf', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none' }}
-              >
-                📞 +39 346 7251989
-              </a>
-            </div>
-
-            {/* Note legali */}
-            <div>
-              <h5 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '16px', color: '#2dd4bf' }}>Note Legali</h5>
-              <p style={{ fontSize: '0.75rem', color: '#5eead4', lineHeight: 1.6 }}>
-                WebDog di Emanuele Barese<br />
-                Educatore CSEN Albo n. 42081
-              </p>
-              <a
-                href="https://business.google.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-block', marginTop: '12px', fontSize: '0.72rem', color: '#2dd4bf', textDecoration: 'underline' }}
-              >
-                ⭐ Lascia una recensione su Google
-              </a>
-            </div>
-          </div>
-
-          <div style={{
-            borderTop: '1px solid rgba(255,255,255,0.1)',
-            paddingTop: '24px',
-            textAlign: 'center',
-            fontSize: '0.78rem',
-            color: '#5eead4'
-          }}>
-            © 2026 WebDog Napoli · Tutti i diritti riservati · Sviluppato con amore cinofilo 🐾
-          </div>
-        </div>
-      </footer>
+      <FooterSection />
 
       {/* ── WHATSAPP FLOATING ACTION BUTTON ─────────────────── */}
       <a
@@ -3174,43 +2755,25 @@ function AdminToggle({ onClick }) {
 }
 
 // ── CookieBanner — GDPR + Italian Cookie Law ───────────────────────────────
-const GA4_ID = 'G-XXXXXXXXXX'; // ← SOSTITUIRE con il tuo Google Analytics 4 Measurement ID
+// ── CookieBanner — GDPR + Italian Cookie Law ───────────────────────────────
+// GA4 viene gestito da src/analytics.js — importato qui per coerenza
+import { initGA as _initGA } from './analytics.js';
 
 function CookieBanner() {
   const STORAGE_KEY = 'webdog_cookie_consent';
   const [visible, setVisible] = React.useState(() => !localStorage.getItem(STORAGE_KEY));
   const [showDetails, setShowDetails] = React.useState(false);
 
-  const loadGA4 = () => {
-    if (GA4_ID === 'G-XXXXXXXXXX') return; // skip if not configured
-    if (document.getElementById('ga4-script')) return; // already loaded
-    const s = document.createElement('script');
-    s.id = 'ga4-script';
-    s.async = true;
-    s.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`;
-    document.head.appendChild(s);
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { window.dataLayer.push(arguments); }
-    window.gtag = gtag;
-    gtag('js', new Date());
-    gtag('config', GA4_ID, { anonymize_ip: true });
-  };
-
   const handleAccept = () => {
     localStorage.setItem(STORAGE_KEY, 'accepted');
     setVisible(false);
-    loadGA4();
+    _initGA(); // avvia GA4 solo dopo il consenso esplicito
   };
 
   const handleReject = () => {
     localStorage.setItem(STORAGE_KEY, 'rejected');
     setVisible(false);
   };
-
-  // Auto-load GA4 if already accepted
-  React.useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY) === 'accepted') loadGA4();
-  }, []);
 
   if (!visible) return null;
 
@@ -3300,10 +2863,10 @@ function EmailModal({ data, onClose, triggerToast, addNotificationLog }) {
     const saved = localStorage.getItem('webdog_email_config');
     return saved ? JSON.parse(saved) : {
       method: 'emailjs',
-      emailjsServiceId: 'service_77dn8u2',
-      emailjsTemplateId: 'template_k3sc8sn',
-      emailjsPublicKey: '6n8JEdiKSucjPCKmR',
-      adminEmail: 'emanuelebarese@gmail.com'
+      emailjsServiceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || '',
+      emailjsTemplateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '',
+      emailjsPublicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '',
+      adminEmail: import.meta.env.VITE_ADMIN_EMAIL || ''
     };
   }, []);
 
@@ -3315,7 +2878,7 @@ function EmailModal({ data, onClose, triggerToast, addNotificationLog }) {
       }
 
       // Send ONE single email to admin with all client details inside
-      const adminEmail = config.adminEmail || 'emanuelebarese@gmail.com';
+      const adminEmail = config.adminEmail || import.meta.env.VITE_ADMIN_EMAIL || '';
       const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
