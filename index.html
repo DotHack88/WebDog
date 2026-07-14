@@ -99,23 +99,20 @@
     }
     </script>
 
+    <!-- ══ PWA MANIFEST ════════════════════════════════════════ -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="WebDog" />
+
     <!-- ══ GOOGLE FONTS ══════════════════════════════════════════ -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <!-- ══ GOOGLE ANALYTICS 4 ════════════════════════════════════ -->
-    <!-- ⚠️  SOSTITUIRE G-XXXXXXXXXX con il tuo Measurement ID reale  -->
-    <!-- Ottienilo su: analytics.google.com → Proprietà → Flussi dati -->
-    <!-- Il tracking si attiva automaticamente solo dopo il consenso   -->
-    <!-- cookie dell'utente (gestito dal CookieBanner in App.jsx)      -->
-    <!--
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX', { anonymize_ip: true });
-    </script>
-    -->
+    <!-- GA4 viene inizializzato via src/analytics.js dopo il consenso  -->
+    <!-- cookie GDPR. Imposta VITE_GA4_MEASUREMENT_ID nel file .env    -->
   </head>
   <body>
     <div id="root"></div>
