@@ -1,45 +1,44 @@
 // ============================================================
-// Firebase Realtime Database — WebDog Sync Layer
+// Firebase — WebDog Sync Layer
 // ============================================================
-// HOW TO CONFIGURE:
-//   1. Go to https://console.firebase.google.com/
-//   2. Create a new project (e.g. "webdog-bookings")
-//   3. Add a Web App and copy the config below
-//   4. Enable "Realtime Database" → Start in test mode
-//   5. Replace the placeholder values and restart the dev server
+// Tutte le chiavi vengono lette dalle variabili d'ambiente Vite
+// definite in .env (mai committare .env, usare .env.example).
 // ============================================================
 
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDLgK3NAYMAVN8vOR0Xts85PmKGSl7JliI",
-  authDomain: "webdog-bookings.firebaseapp.com",
-  databaseURL: "https://webdog-bookings-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "webdog-bookings",
-  storageBucket: "webdog-bookings.firebasestorage.app",
-  messagingSenderId: "920474613807",
-  appId: "1:920474613807:web:3a800e7fbde166d71d2eda"
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL:       import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// ─── Auto-detect if config has been filled in ──────────────
+// Firebase è configurato se apiKey e databaseURL sono presenti
+// e non sono i valori placeholder del .env.example
 export const FIREBASE_CONFIGURED =
-  firebaseConfig.apiKey !== 'AIzaSyDLgK3NAYMAVN8vOR0Xts85PmKGSl7JliI' &&
-  firebaseConfig.databaseURL !== 'https://webdog-bookings-default-rtdb.europe-west1.firebasedatabase.app';
+  Boolean(firebaseConfig.apiKey) &&
+  firebaseConfig.apiKey !== 'your_api_key_here' &&
+  Boolean(firebaseConfig.databaseURL) &&
+  firebaseConfig.databaseURL !== 'https://your_project-default-rtdb.europe-west1.firebasedatabase.app';
 
-let app = null;
+let app      = null;
 let database = null;
+let auth     = null;
 
 if (FIREBASE_CONFIGURED) {
   try {
-    app = initializeApp(firebaseConfig);
+    app      = initializeApp(firebaseConfig);
     database = getDatabase(app);
-    console.info('[WebDog] ✅ Firebase Realtime DB connected — live sync active.');
+    auth     = getAuth(app);
   } catch (err) {
     console.warn('[WebDog] Firebase init error:', err.message);
   }
-} else {
-  console.info('[WebDog] ℹ️ Firebase not configured — running in localStorage-only mode.');
 }
 
-export { database };
+export { database, auth };
