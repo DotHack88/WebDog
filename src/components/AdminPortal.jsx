@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  setPersistence,
+  browserSessionPersistence
+} from 'firebase/auth';
 import { 
   Calendar, DollarSign, Users, Star, Trash2, Check, Clock, 
   ArrowLeft, LogOut, Download, RefreshCw, Sliders, Search, 
   Lock, Mail, FileText, Smartphone, Bell, Eye, EyeOff, Menu, X
 } from 'lucide-react';
+import { auth, FIREBASE_CONFIGURED } from '../firebase';
 
 export default function AdminPortal({ 
   bookings, 
@@ -35,16 +42,17 @@ export default function AdminPortal({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [emailConfig, setEmailConfig] = useState(() => {
     const saved = localStorage.getItem('webdog_email_config');
     return saved ? JSON.parse(saved) : {
-      method: 'emailjs', // 'simulated', 'emailjs', 'mailto'
-      emailjsServiceId: 'service_77dn8u2',
-      emailjsTemplateId: 'template_k3sc8sn',
-      emailjsPublicKey: '6n8JEdiKSucjPCKmR',
-      adminEmail: 'emanuelebarese@gmail.com'
+      method: 'emailjs',
+      emailjsServiceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || '',
+      emailjsTemplateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '',
+      emailjsPublicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '',
+      adminEmail: import.meta.env.VITE_ADMIN_EMAIL || ''
     };
   });
 
@@ -63,26 +71,53 @@ export default function AdminPortal({
   const [exportingPDF, setExportingPDF] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
 
-  // Handle Login validation
-  const handleLogin = (e) => {
+  // Handle Login — Firebase Authentication
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (email === 'admin@webdog.it' && password === 'password123') {
+    setLoginError('');
+    setLoginLoading(true);
+
+    if (!FIREBASE_CONFIGURED || !auth) {
+      // Firebase non configurato: fallback sicuro su variabili d'ambiente
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || '';
+      if (!adminEmail || email !== adminEmail) {
+        setLoginError('Credenziali non valide. Verifica email e password.');
+        setLoginLoading(false);
+        return;
+      }
+      // Senza Firebase Auth non possiamo verificare la password lato client in modo sicuro.
+      // Mostriamo un avviso e blocchiamo l'accesso.
+      setLoginError('Firebase non è configurato. Completa la configurazione in .env per abilitare il login sicuro.');
+      setLoginLoading(false);
+      return;
+    }
+
+    try {
+      await setPersistence(auth, browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, email, password);
       setIsLoggedIn(true);
       setLoginError('');
       triggerToast('Accesso Eseguito', 'Benvenuto nella tua Area Gestionale Operatore.', 'success', 'System');
-    } else {
-      setLoginError('Email o Password non corrette. Prova admin@webdog.it / password123');
+    } catch (err) {
+      const messages = {
+        'auth/user-not-found': 'Nessun account trovato con questa email.',
+        'auth/wrong-password': 'Password non corretta.',
+        'auth/invalid-email': 'Indirizzo email non valido.',
+        'auth/too-many-requests': 'Troppi tentativi falliti. Riprova tra qualche minuto.',
+        'auth/invalid-credential': 'Credenziali non valide. Verifica email e password.',
+      };
+      setLoginError(messages[err.code] || `Errore di accesso: ${err.message}`);
+    } finally {
+      setLoginLoading(false);
     }
   };
 
-  const quickDemoLogin = () => {
-    setEmail('admin@webdog.it');
-    setPassword('password123');
-    setIsLoggedIn(true);
-    triggerToast('Accesso Eseguito', 'Accesso con credenziali Demo autorizzato.', 'success', 'System');
-  };
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      if (FIREBASE_CONFIGURED && auth) {
+        await signOut(auth);
+      }
+    } catch (_) { /* silent */ }
     setIsLoggedIn(false);
     setEmail('');
     setPassword('');
@@ -273,7 +308,7 @@ export default function AdminPortal({
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@webdog.it"
+                  placeholder="la-tua@email.it"
                   required
                   style={{
                     width: '100%',
@@ -344,39 +379,24 @@ export default function AdminPortal({
             <button 
               type="submit" 
               className="btn btn-primary"
+              disabled={loginLoading}
               style={{
                 width: '100%',
                 padding: '14px',
                 borderRadius: '12px',
-                background: '#14b8a6',
+                background: loginLoading ? '#5eead4' : '#14b8a6',
                 color: '#042f2e',
                 fontWeight: 700,
                 fontSize: '1rem',
                 border: 'none',
                 boxShadow: '0 8px 20px rgba(20, 184, 166, 0.3)',
-                marginBottom: '16px'
-              }}
-            >
-              Accedi all'Agenda
-            </button>
-
-            <button 
-              type="button" 
-              onClick={quickDemoLogin}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '12px',
-                background: 'transparent',
-                color: '#2dd4bf',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                border: '1px dashed rgba(45, 212, 191, 0.5)',
-                cursor: 'pointer',
+                marginBottom: '16px',
+                cursor: loginLoading ? 'not-allowed' : 'pointer',
+                opacity: loginLoading ? 0.8 : 1,
                 transition: 'all 0.2s'
               }}
             >
-              Demo: Accedi con 1 Click
+              {loginLoading ? 'Accesso in corso...' : 'Accedi all\'Agenda'}
             </button>
           </form>
 
@@ -626,7 +646,7 @@ export default function AdminPortal({
                 Operatore Cinofilo
               </p>
               <p style={{ fontSize: '0.7rem', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                admin@webdog.it
+                {email || import.meta.env.VITE_ADMIN_EMAIL || 'admin@webdog.it'}
               </p>
             </div>
           </div>
