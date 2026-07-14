@@ -74,6 +74,13 @@ export function useRealtimeBookings(defaultBookings) {
         unsubscribeOnValue = null;
       }
 
+      // Only subscribe when a user is authenticated — avoids permission_denied
+      // errors when the DB rules require auth (e.g. unauthenticated page visits).
+      if (!user) {
+        setSyncStatus('local');
+        return;
+      }
+
       const dbRef = ref(database, 'bookings');
       let seeded = false;
 

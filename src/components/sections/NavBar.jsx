@@ -94,6 +94,13 @@ export default function NavBar({ mobileMenuOpen, setMobileMenuOpen, onAdminClick
           >
             Prenota Ora
           </a>
+          <button
+            onClick={() => { onAdminClick(); setMobileMenuOpen(false); }}
+            className="btn btn-secondary"
+            style={{ padding: '12px 20px', fontSize: '0.95rem', borderRadius: '999px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
+          >
+            <Sliders size={16} /> Gestionale Admin
+          </button>
         </div>
       </nav>
     </>
