@@ -11,13 +11,13 @@ import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL:       import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDLgK3NAYMAVN8vOR0Xts85PmKGSl7JliI',
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'webdog-bookings.firebaseapp.com',
+  databaseURL:       import.meta.env.VITE_FIREBASE_DATABASE_URL || 'https://webdog-bookings-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID || 'webdog-bookings',
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'webdog-bookings.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '920474613807',
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID || '1:920474613807:web:3a800e7fbde166d71d2eda',
 };
 
 // Firebase è configurato se apiKey e databaseURL sono presenti

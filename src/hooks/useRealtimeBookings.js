@@ -75,9 +75,8 @@ export function useRealtimeBookings(defaultBookings) {
       }
 
       // Only subscribe when a user is authenticated — avoids permission_denied
-      // errors when the DB rules require auth (e.g. unauthenticated page visits).
+      // errors when the DB rules require auth.
       if (!user) {
-        setSyncStatus('local');
         return;
       }
 

@@ -1660,11 +1660,11 @@ export default function AdminPortal({
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 fontSize: '0.75rem', fontWeight: 700,
-                color: gallerySyncStatus === 'synced' ? '#10b981' : '#64748b',
-                background: gallerySyncStatus === 'synced' ? '#d1fae5' : '#f1f5f9',
+                color: gallerySyncStatus === 'synced' ? '#10b981' : gallerySyncStatus === 'error' ? '#ef4444' : '#64748b',
+                background: gallerySyncStatus === 'synced' ? '#d1fae5' : gallerySyncStatus === 'error' ? '#fee2e2' : '#f1f5f9',
                 padding: '3px 10px', borderRadius: '999px'
               }}>
-                {gallerySyncStatus === 'synced' ? '🟢 Live Sync' : gallerySyncStatus === 'connecting' ? '🟡 Connessione...' : '⚪ Solo Locale'}
+                {gallerySyncStatus === 'synced' ? '🟢 Live Sync' : gallerySyncStatus === 'connecting' ? '🟡 Connessione...' : gallerySyncStatus === 'error' ? '🔴 Errore Auth' : '⚪ Solo Locale'}
               </span>
               <button
                 onClick={() => setEditingImageId(editingImageId === '__new__' ? null : '__new__')}
@@ -1698,22 +1698,83 @@ export default function AdminPortal({
                         style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                       />
                     </div>
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>Categoria</label>
-                      <select
-                        value={editingImageId === '__new__' ? galleryForm.category : editGalleryForm.category}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (editingImageId === '__new__') setGalleryForm(p => ({ ...p, category: val }));
-                          else setEditGalleryForm(p => ({ ...p, category: val }));
-                        }}
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
-                      >
-                        {['Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport'].map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
+                      {editingImageId === '__new__' ? (
+                        galleryForm.category === '__new__' ? (
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <input
+                              type="text"
+                              autoFocus
+                              placeholder="Nome nuova categoria"
+                              value={galleryForm.newCategoryName || ''}
+                              onChange={(e) => setGalleryForm(p => ({ ...p, newCategoryName: e.target.value }))}
+                              style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setGalleryForm(p => ({ ...p, category: p.newCategoryName || 'Passeggiate', newCategoryName: undefined }))}
+                              style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setGalleryForm(p => ({ ...p, category: 'Passeggiate', newCategoryName: undefined }))}
+                              style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <select
+                            value={galleryForm.category}
+                            onChange={(e) => setGalleryForm(p => ({ ...p, category: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                          >
+                            {Array.from(new Set(['Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport', ...galleryImages.map(img => img.category)])).map((cat) => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                            <option value="__new__" style={{ fontWeight: 'bold', color: '#0f766e' }}>+ Nuova Categoria...</option>
+                          </select>
+                        )
+                      ) : (
+                        editGalleryForm.category === '__new__' ? (
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <input
+                              type="text"
+                              autoFocus
+                              placeholder="Nome nuova categoria"
+                              value={editGalleryForm.newCategoryName || ''}
+                              onChange={(e) => setEditGalleryForm(p => ({ ...p, newCategoryName: e.target.value }))}
+                              style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditGalleryForm(p => ({ ...p, category: p.newCategoryName || 'Passeggiate', newCategoryName: undefined }))}
+                              style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditGalleryForm(p => ({ ...p, category: 'Passeggiate', newCategoryName: undefined }))}
+                              style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <select
+                            value={editGalleryForm.category}
+                            onChange={(e) => setEditGalleryForm(p => ({ ...p, category: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                          >
+                            {Array.from(new Set(['Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport', ...galleryImages.map(img => img.category)])).map((cat) => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                            <option value="__new__" style={{ fontWeight: 'bold', color: '#0f766e' }}>+ Nuova Categoria...</option>
+                          </select>
+                        )
+                      )}
                   </div>
 
                   <div>

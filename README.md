@@ -92,7 +92,8 @@ copy .env.example .env
 # 4. Compila i valori in .env (vedi sezione Configurazione)
 
 # 5. Avvia il dev server
-npm run dev
+
+
 ```
 
 ---
