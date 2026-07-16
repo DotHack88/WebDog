@@ -93,76 +93,103 @@ export default function AdminPortal({
     title: '',
     desc: '',
     category: 'Passeggiate',
-    src: ''
+    src: '',
+    album: []
   });
   const [editingImageId, setEditingImageId] = useState(null);
   const [editGalleryForm, setEditGalleryForm] = useState({
     title: '',
     desc: '',
     category: 'Passeggiate',
-    src: ''
+    src: '',
+    album: []
   });
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
   const handleFileUpload = async (e, mode = 'add') => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
     setIsUploading(true);
     setUploadError('');
 
-    // Offline base64 fallback if storage is not set up
-    if (!FIREBASE_CONFIGURED || !storage) {
+    // Helper: read files as base64 data URIs (offline/CORS-safe fallback)
+    const readAsBase64 = (fileList) => Promise.all(fileList.map(file => new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Url = event.target.result;
-        if (mode === 'add') {
-          setGalleryForm((prev) => ({ ...prev, src: base64Url }));
-        } else {
-          setEditGalleryForm((prev) => ({ ...prev, src: base64Url }));
-        }
-        setIsUploading(false);
-        triggerToast('Caricamento Locale', 'Immagine caricata offline in base64.', 'info', 'Offline Mode');
-      };
-      reader.onerror = () => {
-        setUploadError('Errore durante la lettura del file locale.');
-        setIsUploading(false);
-      };
+      reader.onload = (event) => resolve(event.target.result);
+      reader.onerror = () => reject(new Error('Errore durante la lettura del file locale.'));
       reader.readAsDataURL(file);
+    })));
+
+    const applyUrls = (urls, setForm) => {
+      setForm(prev => {
+        const currentAlbum = prev.album || (prev.src ? [prev.src] : []);
+        const newAlbum = [...currentAlbum, ...urls];
+        return { ...prev, src: newAlbum[0], album: newAlbum };
+      });
+    };
+
+    // If Firebase Storage is not configured → always use base64
+    if (!FIREBASE_CONFIGURED || !storage) {
+      try {
+        const urls = await readAsBase64(files);
+        applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
+        triggerToast('Caricamento Locale', `${files.length} immagin${files.length > 1 ? 'i' : 'e'} caricat${files.length > 1 ? 'e' : 'a'} offline in base64.`, 'info', 'Offline Mode');
+      } catch (err) {
+        setUploadError(err.message || String(err));
+      } finally {
+        setIsUploading(false);
+      }
       return;
     }
 
+    // Firebase Storage configured → try upload, fall back to base64 on CORS/network failure
     try {
-      const storageRefInstance = storageRef(storage, `gallery/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRefInstance, file);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
+      const uploadPromises = files.map(async (file) => {
+        const storageRefInstance = storageRef(storage, `gallery/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRefInstance, file);
+        return await getDownloadURL(snapshot.ref);
+      });
 
-      if (mode === 'add') {
-        setGalleryForm((prev) => ({ ...prev, src: downloadUrl }));
-      } else {
-        setEditGalleryForm((prev) => ({ ...prev, src: downloadUrl }));
-      }
-      triggerToast('Caricamento Completato', 'Foto caricata con successo su Firebase Storage.', 'success', 'Storage');
+      const urls = await Promise.all(uploadPromises);
+      applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
+      triggerToast('Caricamento Completato', `${files.length} foto caricat${files.length > 1 ? 'e' : 'a'} su Firebase Storage.`, 'success', 'Storage');
     } catch (err) {
-      console.error('[WebDog] Storage upload error:', err);
-      setUploadError(`Caricamento fallito: ${err.message}. Puoi inserire un link manualmente.`);
-      triggerToast('Errore Caricamento', 'Impossibile caricare il file su Firebase. Inserisci una URL manualmente.', 'error', 'Storage');
+      console.warn('[WebDog] Firebase Storage upload failed (CORS?), falling back to base64:', err.message);
+      // ── CORS / network fallback ───────────────────────────────────────────
+      try {
+        const urls = await readAsBase64(files);
+        applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
+        triggerToast(
+          'Caricamento Locale (Fallback)',
+          'Firebase Storage non raggiungibile (CORS). Foto salvata in locale — funziona ugualmente. Per abilitare Storage configura le CORS nel progetto Firebase.',
+          'warning',
+          'Offline Fallback'
+        );
+      } catch (fallbackErr) {
+        setUploadError(`Caricamento fallito: ${fallbackErr.message}.`);
+        triggerToast('Errore Caricamento', 'Impossibile caricare il file. Inserisci una URL manualmente.', 'error', 'Storage');
+      }
     } finally {
       setIsUploading(false);
     }
   };
 
+
+
+
   const handleAddGalleryImage = async (e) => {
     e.preventDefault();
-    if (!galleryForm.src || !galleryForm.title) {
-      triggerToast('Campi Mancanti', 'La foto deve avere un titolo e un\'immagine caricata o URL.', 'error', 'Galleria');
+    if ((!galleryForm.src && (!galleryForm.album || galleryForm.album.length === 0)) || !galleryForm.title) {
+      triggerToast('Campi Mancanti', "La foto deve avere un titolo e almeno un'immagine caricata o URL.", 'error', 'Galleria');
       return;
     }
 
     const newImage = {
       id: Date.now(),
-      src: galleryForm.src,
+      src: galleryForm.src || (galleryForm.album && galleryForm.album[0]) || '',
+      album: galleryForm.album || (galleryForm.src ? [galleryForm.src] : []),
       title: galleryForm.title,
       desc: galleryForm.desc || '',
       category: galleryForm.category
@@ -173,7 +200,8 @@ export default function AdminPortal({
       title: '',
       desc: '',
       category: 'Passeggiate',
-      src: ''
+      src: '',
+      album: []
     });
   };
 
@@ -183,14 +211,15 @@ export default function AdminPortal({
       title: img.title,
       desc: img.desc || '',
       category: img.category,
-      src: img.src
+      src: img.src,
+      album: img.album || (img.src ? [img.src] : [])
     });
   };
 
   const handleSaveEditImage = async (e) => {
     e.preventDefault();
-    if (!editGalleryForm.src || !editGalleryForm.title) {
-      triggerToast('Campi Mancanti', 'La foto deve avere un titolo e un\'immagine.', 'error', 'Galleria');
+    if ((!editGalleryForm.src && (!editGalleryForm.album || editGalleryForm.album.length === 0)) || !editGalleryForm.title) {
+      triggerToast('Campi Mancanti', "La foto deve avere un titolo e un'immagine.", 'error', 'Galleria');
       return;
     }
 
@@ -198,7 +227,8 @@ export default function AdminPortal({
       title: editGalleryForm.title,
       desc: editGalleryForm.desc,
       category: editGalleryForm.category,
-      src: editGalleryForm.src
+      src: editGalleryForm.src || (editGalleryForm.album && editGalleryForm.album[0]) || '',
+      album: editGalleryForm.album || (editGalleryForm.src ? [editGalleryForm.src] : [])
     });
     setEditingImageId(null);
   };
@@ -1778,39 +1808,77 @@ export default function AdminPortal({
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>Immagine</label>
-                    {(editingImageId === '__new__' ? galleryForm.src : editGalleryForm.src) ? (
-                      <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', height: '120px' }}>
-                        <img src={editingImageId === '__new__' ? galleryForm.src : editGalleryForm.src} alt="Ant" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <button type="button" onClick={() => { if (editingImageId === '__new__') setGalleryForm(p => ({ ...p, src: '' })); else setEditGalleryForm(p => ({ ...p, src: '' })); }} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', border: 'none', color: 'white', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer' }}><X size={14} /></button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-                        <label style={{
-                          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                          border: '2px dashed #cbd5e1', borderRadius: '10px', padding: '12px',
-                          cursor: isUploading ? 'not-allowed' : 'pointer', background: '#f8fafc',
-                          fontSize: '0.8rem', fontWeight: 600, color: '#475569', textAlign: 'center'
-                        }}>
-                          {isUploading ? <><Loader className="rotating" size={16} style={{ color: '#0f766e' }} /> Caricamento...</> : <><Upload size={16} style={{ color: '#0f766e' }} /> Carica File</>}
-                          <input type="file" accept="image/*" disabled={isUploading}
-                            onChange={(e) => handleFileUpload(e, editingImageId === '__new__' ? 'add' : 'edit')}
-                            style={{ display: 'none' }} />
-                        </label>
-                        <div style={{ display: 'flex', alignItems: 'center', color: '#94a3b8', fontSize: '0.7rem', fontWeight: 600 }}>o</div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '6px' }}>
+                      Foto Album ({(editingImageId === '__new__' ? galleryForm.album : editGalleryForm.album)?.length || 0} foto)
+                    </label>
+
+                    {/* Album thumbnails grid */}
+                    {(() => {
+                      const currentAlbum = (editingImageId === '__new__' ? galleryForm.album : editGalleryForm.album) || [];
+                      const removeFromAlbum = (idx) => {
+                        if (editingImageId === '__new__') {
+                          setGalleryForm(p => {
+                            const newAlbum = p.album.filter((_, i) => i !== idx);
+                            return { ...p, album: newAlbum, src: newAlbum[0] || '' };
+                          });
+                        } else {
+                          setEditGalleryForm(p => {
+                            const newAlbum = p.album.filter((_, i) => i !== idx);
+                            return { ...p, album: newAlbum, src: newAlbum[0] || '' };
+                          });
+                        }
+                      };
+                      return currentAlbum.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '8px', marginBottom: '8px' }}>
+                          {currentAlbum.map((url, idx) => (
+                            <div key={idx} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', aspectRatio: '1/1', border: idx === 0 ? '2px solid #14b8a6' : '1px solid #e2e8f0' }}>
+                              <img src={url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              {idx === 0 && (
+                                <span style={{ position: 'absolute', bottom: '4px', left: '4px', background: '#14b8a6', color: 'white', fontSize: '0.55rem', fontWeight: 800, padding: '1px 5px', borderRadius: '999px' }}>COVER</span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeFromAlbum(idx)}
+                                style={{ position: 'absolute', top: '3px', right: '3px', background: 'rgba(0,0,0,0.65)', border: 'none', color: 'white', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                              >
+                                <X size={11} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
+
+                    {/* Upload + URL row */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                      <label style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        border: '2px dashed #cbd5e1', borderRadius: '10px', padding: '10px',
+                        cursor: isUploading ? 'not-allowed' : 'pointer', background: '#f8fafc',
+                        fontSize: '0.78rem', fontWeight: 600, color: '#475569', textAlign: 'center'
+                      }}>
+                        {isUploading
+                          ? <><Loader className="rotating" size={15} style={{ color: '#0f766e' }} /> Caricamento...</>
+                          : <><Upload size={15} style={{ color: '#0f766e' }} /> + Aggiungi Foto</>}
                         <input
-                          type="text"
-                          placeholder="URL immagine"
-                          value={editingImageId === '__new__' ? galleryForm.src : editGalleryForm.src}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (editingImageId === '__new__') setGalleryForm(p => ({ ...p, src: val }));
-                            else setEditGalleryForm(p => ({ ...p, src: val }));
-                          }}
-                          style={{ flex: 1.5, padding: '8px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.8rem', outline: 'none' }}
+                          type="file" accept="image/*" multiple disabled={isUploading}
+                          onChange={(e) => handleFileUpload(e, editingImageId === '__new__' ? 'add' : 'edit')}
+                          style={{ display: 'none' }}
                         />
-                      </div>
-                    )}
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', color: '#94a3b8', fontSize: '0.7rem', fontWeight: 600 }}>o</div>
+                      <input
+                        type="text"
+                        placeholder="URL immagine"
+                        value={editingImageId === '__new__' ? galleryForm.src : editGalleryForm.src}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (editingImageId === '__new__') setGalleryForm(p => { const newAlbum = val ? [val, ...(p.album||[]).slice(1)] : p.album; return { ...p, src: val, album: val ? (p.album?.length > 0 ? p.album : [val]) : p.album }; });
+                          else setEditGalleryForm(p => { return { ...p, src: val, album: val ? (p.album?.length > 0 ? p.album : [val]) : p.album }; });
+                        }}
+                        style={{ flex: 1.5, padding: '8px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.8rem', outline: 'none' }}
+                      />
+                    </div>
                     {uploadError && <p style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '4px' }}>{uploadError}</p>}
                   </div>
 
@@ -1882,6 +1950,15 @@ export default function AdminPortal({
                         }}>
                           {img.category}
                         </span>
+                        {img.album && img.album.length > 1 && (
+                          <span style={{
+                            position: 'absolute', top: '6px', right: '6px',
+                            background: 'rgba(0,0,0,0.65)', color: 'white',
+                            fontSize: '0.6rem', fontWeight: 800, padding: '2px 7px', borderRadius: '999px'
+                          }}>
+                            📷 {img.album.length}
+                          </span>
+                        )}
                       </div>
                       
                       <div style={{ padding: '8px', background: 'white', borderTop: '1px solid #f1f5f9' }}>
