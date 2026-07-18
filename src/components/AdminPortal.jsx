@@ -610,12 +610,15 @@ export default function AdminPortal({
   }
 
   // Filter bookings based on search
-  const filteredBookings = bookings.filter(b => 
-    b.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.dogName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.service.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBookings = bookings.filter(b => {
+    const term = searchTerm.toLowerCase();
+    return (
+      (b.firstName || '').toLowerCase().includes(term) ||
+      (b.lastName || '').toLowerCase().includes(term) ||
+      (b.dogName || '').toLowerCase().includes(term) ||
+      (b.service || '').toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: '#f8fafc', color: '#1e293b', flexDirection: 'column' }}>
