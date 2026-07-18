@@ -105,16 +105,16 @@ const defaultGalleryImages = [];
 
 export default function App() {
   // Main Navigation View: 'client' or 'admin'
-  // Persisted in localStorage so page refresh doesn't reset to home
-  const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('webdog_view') || 'client';
-  });
+  // Always start as 'client' — admin navigates to the portal via the UI.
+  // We deliberately do NOT persist this in localStorage so that fresh page
+  // visits (and other users on shared devices) always land on the public site.
+  const [viewMode, setViewMode] = useState('client');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Sync viewMode to localStorage on every change
+  // Clear any stale 'admin' value that may have been saved by a previous build
   useEffect(() => {
-    localStorage.setItem('webdog_view', viewMode);
-  }, [viewMode]);
+    localStorage.removeItem('webdog_view');
+  }, []);
 
   // Bookings — Firebase Realtime Database with localStorage fallback
   const { bookings, addBooking, updateBooking, deleteBookingById, syncStatus } = useRealtimeBookings(defaultBookings);
