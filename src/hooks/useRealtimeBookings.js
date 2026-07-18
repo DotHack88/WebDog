@@ -77,6 +77,7 @@ export function useRealtimeBookings(defaultBookings) {
       // Only subscribe when a user is authenticated — avoids permission_denied
       // errors when the DB rules require auth.
       if (!user) {
+        setSyncStatus('local');
         return;
       }
 
@@ -89,15 +90,15 @@ export function useRealtimeBookings(defaultBookings) {
           const remote = fromFirebase(snapshot);
 
           if (remote.length === 0 && !seeded) {
-            // First run: seed Firebase with existing localStorage data so the
-            // operator doesn't lose existing bookings on first connection.
             seeded = true;
             const existing = readLS(defaultBookings);
-            existing.forEach((booking) => {
-              const { firebaseKey: _fk, ...clean } = booking; // strip stale key
-              push(dbRef, clean);
-            });
-            return; // onValue will fire again after the seed push
+            if (existing && existing.length > 0) {
+              existing.forEach((booking) => {
+                const { firebaseKey: _fk, ...clean } = booking; // strip stale key
+                push(dbRef, clean);
+              });
+              return; // onValue will fire again after the seed push
+            }
           }
 
           seeded = true;

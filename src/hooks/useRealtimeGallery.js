@@ -3,7 +3,7 @@ import { ref, onValue, push, update, remove } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, database, FIREBASE_CONFIGURED } from '../firebase';
 
-const LS_KEY = 'webdog_gallery';
+const LS_KEY = 'webdog_gallery_v2';
 
 const fromFirebase = (snapshot) => {
   const data = snapshot.val();
@@ -57,6 +57,7 @@ export function useRealtimeGallery(defaultImages) {
       // Only subscribe when a user is authenticated — avoids permission_denied
       // errors when the DB rules require auth.
       if (!user) {
+        setSyncStatus('local');
         return;
       }
 
@@ -69,15 +70,15 @@ export function useRealtimeGallery(defaultImages) {
           const remote = fromFirebase(snapshot);
 
           if (remote.length === 0 && !seeded) {
-            // First run: seed Firebase with default/localStorage images so the
-            // database is initialized
             seeded = true;
             const existing = readLS(defaultImages);
-            existing.forEach((img) => {
-              const { firebaseKey: _fk, ...clean } = img;
-              push(dbRef, clean);
-            });
-            return; // onValue will trigger again
+            if (existing && existing.length > 0) {
+              existing.forEach((img) => {
+                const { firebaseKey: _fk, ...clean } = img;
+                push(dbRef, clean);
+              });
+              return; // onValue will trigger again
+            }
           }
 
           seeded = true;

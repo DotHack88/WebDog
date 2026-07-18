@@ -114,10 +114,13 @@ export default function AdminPortal({
     setIsUploading(true);
     setUploadError('');
 
-    // Helper: read files as base64 data URIs (offline/CORS-safe fallback)
+    const targetForm = mode === 'add' ? galleryForm : editGalleryForm;
+    const category = targetForm.category || 'Uncategorized';
+
+    // Helper: read files as base64 data URIs
     const readAsBase64 = (fileList) => Promise.all(fileList.map(file => new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (event) => resolve(event.target.result);
+      reader.onload = (event) => resolve({ name: file.name, base64: event.target.result });
       reader.onerror = () => reject(new Error('Errore durante la lettura del file locale.'));
       reader.readAsDataURL(file);
     })));
@@ -130,47 +133,33 @@ export default function AdminPortal({
       });
     };
 
-    // If Firebase Storage is not configured → always use base64
-    if (!FIREBASE_CONFIGURED || !storage) {
-      try {
-        const urls = await readAsBase64(files);
-        applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
-        triggerToast('Caricamento Locale', `${files.length} immagin${files.length > 1 ? 'i' : 'e'} caricat${files.length > 1 ? 'e' : 'a'} offline in base64.`, 'info', 'Offline Mode');
-      } catch (err) {
-        setUploadError(err.message || String(err));
-      } finally {
-        setIsUploading(false);
-      }
-      return;
-    }
-
-    // Firebase Storage configured → try upload, fall back to base64 on CORS/network failure
     try {
-      const uploadPromises = files.map(async (file) => {
-        const storageRefInstance = storageRef(storage, `gallery/${Date.now()}_${file.name}`);
-        const snapshot = await uploadBytes(storageRefInstance, file);
-        return await getDownloadURL(snapshot.ref);
+      const fileDataList = await readAsBase64(files);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          category,
+          files: fileDataList
+        })
       });
 
-      const urls = await Promise.all(uploadPromises);
-      applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
-      triggerToast('Caricamento Completato', `${files.length} foto caricat${files.length > 1 ? 'e' : 'a'} su Firebase Storage.`, 'success', 'Storage');
-    } catch (err) {
-      console.warn('[WebDog] Firebase Storage upload failed (CORS?), falling back to base64:', err.message);
-      // ── CORS / network fallback ───────────────────────────────────────────
-      try {
-        const urls = await readAsBase64(files);
-        applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
-        triggerToast(
-          'Caricamento Locale (Fallback)',
-          'Firebase Storage non raggiungibile (CORS). Foto salvata in locale — funziona ugualmente. Per abilitare Storage configura le CORS nel progetto Firebase.',
-          'warning',
-          'Offline Fallback'
-        );
-      } catch (fallbackErr) {
-        setUploadError(`Caricamento fallito: ${fallbackErr.message}.`);
-        triggerToast('Errore Caricamento', 'Impossibile caricare il file. Inserisci una URL manualmente.', 'error', 'Storage');
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Errore del server durante il salvataggio.');
       }
+
+      const { urls } = await response.json();
+      applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
+      triggerToast('Caricamento Completato', `${urls.length} foto salvat${urls.length > 1 ? 'e' : 'a'} in locale.`, 'success', 'Storage Locale');
+
+    } catch (err) {
+      console.error('[WebDog] Local upload failed:', err);
+      setUploadError(`Caricamento fallito: ${err.message}`);
+      triggerToast('Errore Caricamento', 'Impossibile salvare la foto localmente.', 'error', 'Storage Locale');
     } finally {
       setIsUploading(false);
     }
@@ -1728,6 +1717,8 @@ export default function AdminPortal({
                         style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                       />
                     </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Categoria *</label>
                       {editingImageId === '__new__' ? (
                         galleryForm.category === '__new__' ? (
                           <div style={{ display: 'flex', gap: '4px' }}>
@@ -1805,6 +1796,7 @@ export default function AdminPortal({
                           </select>
                         )
                       )}
+                    </div>
                   </div>
 
                   <div>
@@ -1907,9 +1899,38 @@ export default function AdminPortal({
 
             {/* Photo Grid */}
             <div>
-              <h3 style={{ fontWeight: 700, fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
-                Foto in Galleria ({galleryImages.length})
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ fontWeight: 700, fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                  Foto in Galleria ({galleryImages.length})
+                </h3>
+                {galleryImages.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      if (window.confirm('Sei sicuro di voler eliminare TUTTE le foto dalla galleria? Questa azione è irreversibile.')) {
+                        for (const img of galleryImages) {
+                          await deleteGalleryImage(img.id);
+                        }
+                        triggerToast('Galleria Svuotata', 'Tutte le foto sono state rimosse.', 'success', 'Galleria');
+                      }
+                    }}
+                    style={{
+                      background: '#fee2e2',
+                      color: '#ef4444',
+                      border: 'none',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Trash2 size={12} /> Svuota Tutto
+                  </button>
+                )}
+              </div>
 
               {galleryImages.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8', background: '#f8fafc', borderRadius: '14px' }}>

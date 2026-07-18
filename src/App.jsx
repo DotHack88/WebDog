@@ -101,18 +101,7 @@ const defaultBookings = [
   }
 ];
 
-// Image Gallery data
-const defaultGalleryImages = [
-  { id: 1, src: '/gallery_walk.png', category: 'Passeggiate', title: 'Passeggiata Educativa nei Boschi', desc: 'Socializzazione e movimento all\'aperto.' },
-  { id: 2, src: '/gallery_sitting.png', category: 'Dog Sitting', title: 'Riposo confortevole sul divano', desc: 'Ambiente casalingo sicuro e rilassante.' },
-  { id: 3, src: '/gallery_training.png', category: 'Educazione', title: 'Focalizzazione e Agility', desc: 'Addestramento stimolante con rinforzo positivo.' },
-  { id: 4, src: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=600', category: 'Eventi', title: 'Puppy Class di Gruppo', desc: 'Socializzazione precoce per cuccioli dai 3 ai 6 mesi.' },
-  { id: 5, src: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&q=80&w=600', category: 'Passeggiate', title: 'Gruppo di Passeggiata al Parco', desc: 'Attività stimolante in branco guidato.' },
-  { id: 6, src: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=600', category: 'Dog Sitting', title: 'Coccole a domicilio', desc: 'Assistenza affettuosa e personalizzata.' },
-  { id: 7, src: '/albums/IMG_20260322_121538.jpg', category: 'I Miei Sport', title: 'Gara di Rally-O', desc: 'Freya & Na\'vi.' },
-  { id: 8, src: '/albums/IMG-20260413-WA0017.jpg', category: 'I Miei Sport', title: 'Gara di Agility', desc: 'Esordio.' },
-  { id: 9, src: '/albums/IMG_20260509_121459.jpg', category: 'I Miei Sport', title: 'Gara di Agility', desc: 'Freya 🥈 2° Posto e 🥉 3° Posto in combinata.' }, 
-];
+const defaultGalleryImages = [];
 
 export default function App() {
   // Main Navigation View: 'client' or 'admin'

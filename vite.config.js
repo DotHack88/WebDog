@@ -1,11 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer'
+import localUploadPlugin from './vite-plugin-local-upload.js'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: '127.0.0.1', // Forza IPv4 per evitare problemi con WebSocket/HMR
+    port: 5173,
+    strictPort: true,
+  },
   plugins: [
     react(),
+    localUploadPlugin(),
 
     // ── Ottimizzazione automatica immagini al build ──────────────
     // Comprime JPG, PNG, WebP nella cartella /public e negli import
