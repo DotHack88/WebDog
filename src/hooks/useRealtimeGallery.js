@@ -5,38 +5,42 @@ import { auth, database, FIREBASE_CONFIGURED } from '../firebase';
 
 const LS_KEY = 'webdog_gallery_v2';
 
+const sanitizeGalleryData = (imagesArray) => {
+  const badPattern = 'webdog-bookings.firebasestorage.app';
+  return imagesArray.map((val) => {
+    let safeSrc = val.src || '';
+    if (typeof safeSrc === 'string' && safeSrc.includes(badPattern)) {
+      safeSrc = 'data:image/png;base64,BROKEN';
+    }
+    
+    let safeAlbum = val.album || [];
+    if (Array.isArray(safeAlbum)) {
+      safeAlbum = safeAlbum.map(url => 
+        (typeof url === 'string' && url.includes(badPattern)) 
+          ? 'data:image/png;base64,BROKEN'
+          : url
+      );
+    }
+    return { ...val, src: safeSrc, album: safeAlbum };
+  });
+};
+
 const fromFirebase = (snapshot) => {
   const data = snapshot.val();
   if (!data) return [];
-  return Object.entries(data)
-    .map(([firebaseKey, val]) => {
-      // Prevent browser from attempting to load images from the old deleted bucket
-      // which causes CORS 404 errors in the console before React can catch them.
-      const badPattern = 'webdog-bookings.firebasestorage.app';
-      
-      let safeSrc = val.src || '';
-      if (typeof safeSrc === 'string' && safeSrc.includes(badPattern)) {
-        safeSrc = 'data:image/png;base64,BROKEN'; // Invalid data URI triggers onError instantly without network request
-      }
-      
-      let safeAlbum = val.album || [];
-      if (Array.isArray(safeAlbum)) {
-        safeAlbum = safeAlbum.map(url => 
-          (typeof url === 'string' && url.includes(badPattern)) 
-            ? 'data:image/png;base64,BROKEN'
-            : url
-        );
-      }
-
-      return { ...val, firebaseKey, src: safeSrc, album: safeAlbum };
-    })
-    .sort((a, b) => Number(a.id || 0) - Number(b.id || 0)); // keep numerical ordering ascending
+  const rawArray = Object.entries(data).map(([firebaseKey, val]) => ({ ...val, firebaseKey }));
+  const sanitizedArray = sanitizeGalleryData(rawArray);
+  return sanitizedArray.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
 };
 
 const readLS = (defaultImages) => {
   try {
     const saved = localStorage.getItem(LS_KEY);
-    return saved ? JSON.parse(saved) : defaultImages;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return sanitizeGalleryData(parsed);
+    }
+    return defaultImages;
   } catch {
     return defaultImages;
   }
