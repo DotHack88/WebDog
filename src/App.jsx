@@ -20,6 +20,8 @@ import GallerySection from './components/sections/GallerySection';
 import BookingSection from './components/sections/BookingSection';
 import ReviewsSection from './components/sections/ReviewsSection';
 import ContactSection from './components/sections/ContactSection';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, FIREBASE_CONFIGURED } from './firebase';
 
 // Default seeded reviews
 const defaultReviews = [
@@ -60,11 +62,24 @@ const defaultGalleryImages = [];
 
 export default function App() {
   // Main Navigation View: 'client' or 'admin'
-  // Always start as 'client' — admin navigates to the portal via the UI.
-  // We deliberately do NOT persist this in localStorage so that fresh page
-  // visits (and other users on shared devices) always land on the public site.
+  // Starts as 'client'. Auto-switches to 'admin' if Firebase detects an
+  // active authenticated session (e.g. after page refresh while logged in).
   const [viewMode, setViewMode] = useState('client');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // ── Restore admin session on refresh ─────────────────────
+  // If the user was already authenticated (Firebase session persisted in
+  // the browser), jump straight to the admin panel instead of the homepage.
+  useEffect(() => {
+    if (!FIREBASE_CONFIGURED || !auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setViewMode('admin');
+      }
+    });
+    // Unsubscribe immediately — we only need the first emission at mount.
+    return () => unsubscribe();
+  }, []);
 
   // Clear stale admin view flag and any demo-data left in localStorage
   // from before Firebase was configured (one-time migration).

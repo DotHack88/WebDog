@@ -52,6 +52,15 @@ export default function GallerySection({
     }
   };
 
+  // Graceful fallback placeholder for broken/CORS-blocked images (e.g. old Firebase bucket)
+  const handleImgError = (e) => {
+    e.currentTarget.style.display = 'none';
+    const placeholder = e.currentTarget.nextSibling;
+    if (placeholder && placeholder.classList.contains('img-placeholder')) {
+      placeholder.style.display = 'flex';
+    }
+  };
+
   // Dynamically extract unique categories from gallery images
   const dynamicCategories = ['Tutti', ...Array.from(new Set(galleryImages.map(img => img.category)))];
 
@@ -111,7 +120,24 @@ export default function GallerySection({
                       }}
                       onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
                       onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1.0)'}
+                      onError={handleImgError}
                     />
+                    {/* Fallback placeholder for broken/CORS-blocked images */}
+                    <div
+                      className="img-placeholder"
+                      style={{
+                        display: 'none', width: '100%', height: '100%',
+                        background: 'linear-gradient(135deg, #f0fdf4, #d1fae5)',
+                        alignItems: 'center', justifyContent: 'center',
+                        flexDirection: 'column', gap: '8px',
+                        position: 'absolute', top: 0, left: 0
+                      }}
+                    >
+                      <span style={{ fontSize: '2.5rem' }}>🐾</span>
+                      <span style={{ fontSize: '0.75rem', color: '#6b7280', textAlign: 'center', padding: '0 12px' }}>
+                        Immagine non disponibile
+                      </span>
+                    </div>
                     {/* Album badge */}
                     {isAlbum && (
                       <div style={{
@@ -160,7 +186,20 @@ export default function GallerySection({
               src={filteredGallery[lightboxIndex].src}
               alt={filteredGallery[lightboxIndex].title}
               decoding="async"
+              onError={handleImgError}
             />
+            {/* Placeholder inside lightbox */}
+            <div
+              className="img-placeholder"
+              style={{
+                display: 'none', minHeight: '200px',
+                alignItems: 'center', justifyContent: 'center',
+                flexDirection: 'column', gap: '10px', color: '#94a3b8'
+              }}
+            >
+              <span style={{ fontSize: '3rem' }}>🐾</span>
+              <span>Immagine non disponibile</span>
+            </div>
 
             <div style={{ marginTop: '16px', textAlign: 'center', color: 'white' }}>
               <span className="badge" style={{ color: '#2dd4bf', background: 'rgba(45, 212, 191, 0.1)', borderColor: 'rgba(45, 212, 191, 0.2)', marginBottom: '8px' }}>
@@ -200,7 +239,20 @@ export default function GallerySection({
               decoding="async"
               key={albumLightbox.slideIdx}
               style={{ animation: 'fadeIn 0.3s ease' }}
+              onError={handleImgError}
             />
+            {/* Placeholder inside album lightbox */}
+            <div
+              className="img-placeholder"
+              style={{
+                display: 'none', minHeight: '200px',
+                alignItems: 'center', justifyContent: 'center',
+                flexDirection: 'column', gap: '10px', color: '#94a3b8'
+              }}
+            >
+              <span style={{ fontSize: '3rem' }}>🐾</span>
+              <span>Immagine non disponibile</span>
+            </div>
 
             <div style={{ marginTop: '16px', textAlign: 'center', color: 'white' }}>
               <span className="badge" style={{ color: '#2dd4bf', background: 'rgba(45, 212, 191, 0.1)', borderColor: 'rgba(45, 212, 191, 0.2)', marginBottom: '8px' }}>
@@ -221,10 +273,20 @@ export default function GallerySection({
                         borderRadius: '6px', overflow: 'hidden', cursor: 'pointer',
                         outline: idx === albumLightbox.slideIdx ? '2px solid #2dd4bf' : '2px solid transparent',
                         outlineOffset: '2px', transition: 'outline 0.15s',
-                        opacity: idx === albumLightbox.slideIdx ? 1 : 0.55
+                        opacity: idx === albumLightbox.slideIdx ? 1 : 0.55,
+                        position: 'relative'
                       }}
                     >
-                      <img src={url} alt={`Miniatura ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img
+                        src={url}
+                        alt={`Miniatura ${idx + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        onError={handleImgError}
+                      />
+                      <div
+                        className="img-placeholder"
+                        style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', fontSize: '1rem', position: 'absolute', top: 0, left: 0 }}
+                      >🐾</div>
                     </button>
                   ))}
                 </div>
