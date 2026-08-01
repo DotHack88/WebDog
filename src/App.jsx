@@ -52,54 +52,9 @@ const defaultReviews = [
   }
 ];
 
-// Default seeded bookings
-const defaultBookings = [
-  {
-    id: 'b1',
-    firstName: 'Marco',
-    lastName: 'Rossi',
-    phone: '3331234567',
-    email: 'marco.rossi@gmail.com',
-    dogName: 'Buddy',
-    dogBreed: 'Labrador',
-    dogAge: '2',
-    service: 'Passeggiata Cinofila (60m)',
-    date: '2026-06-10',
-    time: '10:00',
-    notes: 'Buddy è molto amichevole ma tende a tirare al guinzaglio all\'inizio.',
-    status: 'pending'
-  },
-  {
-    id: 'b2',
-    firstName: 'Giulia',
-    lastName: 'Bianchi',
-    phone: '3479876543',
-    email: 'giulia.b@domain.com',
-    dogName: 'Stella',
-    dogBreed: 'Pastore Tedesco',
-    dogAge: '4',
-    service: 'Dog Sitting Diurno',
-    date: '2026-06-12',
-    time: '09:00',
-    notes: 'Ha bisogno di fare attività all\'aperto e di giochi di attivazione mentale.',
-    status: 'confirmed'
-  },
-  {
-    id: 'b3',
-    firstName: 'Lorenzo',
-    lastName: 'Verdi',
-    phone: '3281112223',
-    email: 'lorenzo.v@test.it',
-    dogName: 'Milo',
-    dogBreed: 'Jack Russell',
-    dogAge: '1',
-    service: 'Educazione Base',
-    date: '2026-06-15',
-    time: '15:30',
-    notes: 'Gestione del richiamo e socializzazione con altri cuccioli.',
-    status: 'confirmed'
-  }
-];
+// No default bookings — real appointments come from Firebase Realtime Database.
+// An empty array prevents the auto-seed logic from polluting a fresh database.
+const defaultBookings = [];
 
 const defaultGalleryImages = [];
 
@@ -111,9 +66,25 @@ export default function App() {
   const [viewMode, setViewMode] = useState('client');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Clear any stale 'admin' value that may have been saved by a previous build
+  // Clear stale admin view flag and any demo-data left in localStorage
+  // from before Firebase was configured (one-time migration).
   useEffect(() => {
     localStorage.removeItem('webdog_view');
+    // Remove demo bookings that were seeded before Firebase was connected.
+    // We detect them by their hardcoded IDs (b1, b2, b3).
+    const demoIds = new Set(['b1', 'b2', 'b3']);
+    const saved = localStorage.getItem('webdog_bookings');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const cleaned = parsed.filter((b) => !demoIds.has(b.id));
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem('webdog_bookings', JSON.stringify(cleaned));
+        }
+      } catch {
+        localStorage.removeItem('webdog_bookings');
+      }
+    }
   }, []);
 
   // Bookings — Firebase Realtime Database with localStorage fallback

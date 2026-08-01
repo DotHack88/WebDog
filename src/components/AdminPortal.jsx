@@ -134,32 +134,75 @@ export default function AdminPortal({
     };
 
     try {
-      const fileDataList = await readAsBase64(files);
+      const imgbbKey = import.meta.env.VITE_IMGBB_API_KEY;
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          category,
-          files: fileDataList
-        })
-      });
+      if (imgbbKey) {
+        // 1. Upload to ImgBB
+        const urls = [];
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('image', file);
+          
+          const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          if (data.success) {
+            urls.push(data.data.url);
+          } else {
+            throw new Error(data.error?.message || 'Errore API ImgBB');
+          }
+        }
+        applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
+        triggerToast('Caricamento Completato', `${urls.length} foto salvat${urls.length > 1 ? 'e' : 'a'} su ImgBB.`, 'success', 'Storage');
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Errore del server durante il salvataggio.');
+      } else if (FIREBASE_CONFIGURED && storage) {
+        // 2. Upload to Firebase Storage
+        const urls = [];
+        for (const file of files) {
+          const safeName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+          const fileRef = storageRef(storage, `album/${category}/${safeName}`);
+          await uploadBytes(fileRef, file);
+          const downloadUrl = await getDownloadURL(fileRef);
+          urls.push(downloadUrl);
+        }
+        applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
+        triggerToast('Caricamento Completato', `${urls.length} foto salvat${urls.length > 1 ? 'e' : 'a'} sul cloud (Firebase).`, 'success', 'Storage');
+        
+      } else {
+        // 3. Fallback to local upload (only works with vite dev server)
+        const fileDataList = await readAsBase64(files);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            category,
+            files: fileDataList
+          })
+        });
+
+        if (!response.ok) {
+          let errData;
+          try {
+            errData = await response.json();
+          } catch (jsonErr) {
+            throw new Error(`Errore HTTP ${response.status}: L'API locale non è disponibile. Controlla di usare il comando "npm run dev".`);
+          }
+          throw new Error(errData?.error || 'Errore del server durante il salvataggio.');
+        }
+
+        const { urls } = await response.json();
+        applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
+        triggerToast('Caricamento Completato', `${urls.length} foto salvat${urls.length > 1 ? 'e' : 'a'} in locale.`, 'success', 'Storage Locale');
       }
-
-      const { urls } = await response.json();
-      applyUrls(urls, mode === 'add' ? setGalleryForm : setEditGalleryForm);
-      triggerToast('Caricamento Completato', `${urls.length} foto salvat${urls.length > 1 ? 'e' : 'a'} in locale.`, 'success', 'Storage Locale');
-
     } catch (err) {
-      console.error('[WebDog] Local upload failed:', err);
+      console.error('[WebDog] Upload failed:', err);
       setUploadError(`Caricamento fallito: ${err.message}`);
-      triggerToast('Errore Caricamento', 'Impossibile salvare la foto localmente.', 'error', 'Storage Locale');
+      triggerToast('Errore Caricamento', err.message, 'error', 'Storage');
     } finally {
       setIsUploading(false);
     }
@@ -1802,6 +1845,26 @@ export default function AdminPortal({
                     </div>
                   </div>
 
+                  {/* Descrizione */}
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      Descrizione <span style={{ color: '#94a3b8', fontWeight: 400 }}>(breve testo visibile sotto il titolo)</span>
+                    </label>
+                    <textarea
+                      placeholder="Es: Freya & Na'vi. oppure Attività stimolante in branco guidato."
+                      rows={2}
+                      value={editingImageId === '__new__' ? (galleryForm.desc || '') : (editGalleryForm.desc || '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (editingImageId === '__new__') setGalleryForm(p => ({ ...p, desc: val }));
+                        else setEditGalleryForm(p => ({ ...p, desc: val }));
+                      }}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+
+                  {/* Foto Album */}
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '6px' }}>
                       Foto Album ({(editingImageId === '__new__' ? galleryForm.album : editGalleryForm.album)?.length || 0} foto)
@@ -1878,6 +1941,7 @@ export default function AdminPortal({
                   </div>
 
                   {/* Actions */}
+
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       type="submit"
