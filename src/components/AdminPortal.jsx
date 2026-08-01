@@ -139,9 +139,14 @@ export default function AdminPortal({
       if (imgbbKey) {
         // 1. Upload to ImgBB
         const urls = [];
-        for (const file of files) {
+        const fileDataList = await readAsBase64(files);
+        
+        for (const fileData of fileDataList) {
           const formData = new FormData();
-          formData.append('image', file);
+          // Estrai solo la parte base64 pulita (dopo la virgola)
+          const base64Content = fileData.base64.split(',')[1];
+          formData.append('image', base64Content);
+          formData.append('name', fileData.name.split('.')[0]); // Nome opzionale
           
           const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
             method: 'POST',
