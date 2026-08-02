@@ -659,6 +659,8 @@ export default function AdminPortal({
 
   // Filter bookings based on search
   const filteredBookings = bookings.filter(b => {
+    if (b.status === 'cancelled') return false;
+    
     const term = searchTerm.toLowerCase();
     return (
       (b.firstName || '').toLowerCase().includes(term) ||
