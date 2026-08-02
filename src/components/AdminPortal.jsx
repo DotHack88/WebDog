@@ -1822,7 +1822,11 @@ export default function AdminPortal({
                             onChange={(e) => setGalleryForm(p => ({ ...p, category: e.target.value }))}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
                           >
-                            {Array.from(new Set(['Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport', ...galleryImages.map(img => img.category)])).map((cat) => (
+                            {Array.from(new Set([
+                              'Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport',
+                              ...(galleryForm.category && galleryForm.category !== '__new__' ? [galleryForm.category] : []),
+                              ...galleryImages.map(img => img.category)
+                            ])).map((cat) => (
                               <option key={cat} value={cat}>{cat}</option>
                             ))}
                             <option value="__new__" style={{ fontWeight: 'bold', color: '#0f766e' }}>+ Nuova Categoria...</option>
@@ -1866,7 +1870,11 @@ export default function AdminPortal({
                             onChange={(e) => setEditGalleryForm(p => ({ ...p, category: e.target.value }))}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
                           >
-                            {Array.from(new Set(['Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport', ...galleryImages.map(img => img.category)])).map((cat) => (
+                            {Array.from(new Set([
+                              'Passeggiate', 'Dog Sitting', 'Educazione', 'Eventi', 'I Miei Sport',
+                              ...(editGalleryForm.category && editGalleryForm.category !== '__new__' ? [editGalleryForm.category] : []),
+                              ...galleryImages.map(img => img.category)
+                            ])).map((cat) => (
                               <option key={cat} value={cat}>{cat}</option>
                             ))}
                             <option value="__new__" style={{ fontWeight: 'bold', color: '#0f766e' }}>+ Nuova Categoria...</option>
