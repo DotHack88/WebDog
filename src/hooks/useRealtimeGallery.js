@@ -21,7 +21,11 @@ const sanitizeGalleryData = (imagesArray) => {
           : url
       );
     }
-    return { ...val, src: safeSrc, album: safeAlbum };
+
+    // Fix images previously saved with the literal '__new__' category sentinel
+    const safeCategory = val.category === '__new__' ? 'Senza Categoria' : (val.category || 'Senza Categoria');
+
+    return { ...val, src: safeSrc, album: safeAlbum, category: safeCategory };
   });
 };
 

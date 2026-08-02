@@ -223,13 +223,19 @@ export default function AdminPortal({
       return;
     }
 
+    // Auto-confirm new category if user typed a name but didn't click ✓
+    let resolvedCategory = galleryForm.category;
+    if (resolvedCategory === '__new__') {
+      resolvedCategory = (galleryForm.newCategoryName || '').trim() || 'Passeggiate';
+    }
+
     const newImage = {
       id: Date.now(),
       src: galleryForm.src || (galleryForm.album && galleryForm.album[0]) || '',
       album: galleryForm.album || (galleryForm.src ? [galleryForm.src] : []),
       title: galleryForm.title,
       desc: galleryForm.desc || '',
-      category: galleryForm.category
+      category: resolvedCategory
     };
 
     await addGalleryImage(newImage);
@@ -260,10 +266,16 @@ export default function AdminPortal({
       return;
     }
 
+    // Auto-confirm new category if user typed a name but didn't click ✓
+    let resolvedCategory = editGalleryForm.category;
+    if (resolvedCategory === '__new__') {
+      resolvedCategory = (editGalleryForm.newCategoryName || '').trim() || 'Passeggiate';
+    }
+
     await updateGalleryImage(editingImageId, {
       title: editGalleryForm.title,
       desc: editGalleryForm.desc,
-      category: editGalleryForm.category,
+      category: resolvedCategory,
       src: editGalleryForm.src || (editGalleryForm.album && editGalleryForm.album[0]) || '',
       album: editGalleryForm.album || (editGalleryForm.src ? [editGalleryForm.src] : [])
     });
@@ -1781,11 +1793,17 @@ export default function AdminPortal({
                               placeholder="Nome nuova categoria"
                               value={galleryForm.newCategoryName || ''}
                               onChange={(e) => setGalleryForm(p => ({ ...p, newCategoryName: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  setGalleryForm(p => ({ ...p, category: (p.newCategoryName || '').trim() || 'Passeggiate', newCategoryName: undefined }));
+                                }
+                              }}
                               style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
                             />
                             <button
                               type="button"
-                              onClick={() => setGalleryForm(p => ({ ...p, category: p.newCategoryName || 'Passeggiate', newCategoryName: undefined }))}
+                              onClick={() => setGalleryForm(p => ({ ...p, category: (p.newCategoryName || '').trim() || 'Passeggiate', newCategoryName: undefined }))}
                               style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
                             >
                               <Check size={14} />
@@ -1819,11 +1837,17 @@ export default function AdminPortal({
                               placeholder="Nome nuova categoria"
                               value={editGalleryForm.newCategoryName || ''}
                               onChange={(e) => setEditGalleryForm(p => ({ ...p, newCategoryName: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  setEditGalleryForm(p => ({ ...p, category: (p.newCategoryName || '').trim() || 'Passeggiate', newCategoryName: undefined }));
+                                }
+                              }}
                               style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
                             />
                             <button
                               type="button"
-                              onClick={() => setEditGalleryForm(p => ({ ...p, category: p.newCategoryName || 'Passeggiate', newCategoryName: undefined }))}
+                              onClick={() => setEditGalleryForm(p => ({ ...p, category: (p.newCategoryName || '').trim() || 'Passeggiate', newCategoryName: undefined }))}
                               style={{ padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
                             >
                               <Check size={14} />
