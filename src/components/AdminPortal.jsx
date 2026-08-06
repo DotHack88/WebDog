@@ -154,7 +154,10 @@ export default function AdminPortal({
           });
           const data = await res.json();
           if (data.success) {
-            urls.push(data.data.url);
+            // display_url = URL diretto all'immagine (es. https://i.ibb.co/xxx/foto.jpg)
+            // data.data.url = pagina viewer HTML — NON usare per <img src>
+            const directUrl = data.data.display_url || data.data.image?.url || data.data.url;
+            urls.push(directUrl);
           } else {
             throw new Error(data.error?.message || 'Errore API ImgBB');
           }
@@ -1958,7 +1961,10 @@ export default function AdminPortal({
                           ? <><Loader className="rotating" size={15} style={{ color: '#0f766e' }} /> Caricamento...</>
                           : <><Upload size={15} style={{ color: '#0f766e' }} /> + Aggiungi Foto</>}
                         <input
-                          type="file" accept="image/*" multiple disabled={isUploading}
+                          type="file"
+                          accept="image/*,image/heic,image/heif,.heic,.heif"
+                          multiple
+                          disabled={isUploading}
                           onChange={(e) => handleFileUpload(e, editingImageId === '__new__' ? 'add' : 'edit')}
                           style={{ display: 'none' }}
                         />

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ref, onValue, push, update, remove } from 'firebase/database';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, database, FIREBASE_CONFIGURED } from '../firebase';
+import { database, FIREBASE_CONFIGURED } from '../firebase';
 
 const LS_KEY = 'webdog_gallery_v2';
 
@@ -69,61 +68,53 @@ export function useRealtimeGallery(defaultImages) {
     galleryRef.current = galleryImages;
   }, [galleryImages]);
 
-  // ── Firebase real-time listener ──────────────────────────
+  // ── Firebase real-time listener ──────────────────────────────────────
   useEffect(() => {
-    if (!FIREBASE_CONFIGURED || !database || !auth) return;
+    if (!FIREBASE_CONFIGURED || !database) return;
 
-    let unsubscribeOnValue = null;
+    // La galleria è dati pubblici — avvia il listener subito, senza aspettare auth.
+    // Le scritture (add/update/delete) richiedono auth tramite il login Admin.
+    const dbRef = ref(database, 'gallery');
+    let seeded = false;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      // Clean up previous listener
-      if (unsubscribeOnValue) {
-        unsubscribeOnValue();
-        unsubscribeOnValue = null;
-      }
+    const unsubscribeOnValue = onValue(
+      dbRef,
+      (snapshot) => {
+        const remote = fromFirebase(snapshot);
 
-      // Only subscribe when a user is authenticated — avoids permission_denied
-      // errors when the DB rules require auth.
-      if (!user) {
-        setSyncStatus('local');
-        return;
-      }
-
-      const dbRef = ref(database, 'gallery');
-      let seeded = false;
-
-      unsubscribeOnValue = onValue(
-        dbRef,
-        (snapshot) => {
-          const remote = fromFirebase(snapshot);
-
-          if (remote.length === 0 && !seeded) {
-            seeded = true;
-            const existing = readLS(defaultImages);
-            if (existing && existing.length > 0) {
+        if (remote.length === 0 && !seeded) {
+          seeded = true;
+          const existing = readLS(defaultImages);
+          if (existing && existing.length > 0) {
+            // Seed Firebase con i dati locali (solo alla prima volta)
+            import('firebase/database').then(({ push: fbPush }) => {
+              existing.forEach((img) => {
+                const { firebaseKey: _fk, ...clean } = img;
+                fbPush(dbRef, clean);
+              });
+            }).catch(() => {
               existing.forEach((img) => {
                 const { firebaseKey: _fk, ...clean } = img;
                 push(dbRef, clean);
               });
-              return; // onValue will trigger again
-            }
+            });
+            return; // onValue si riattiverà dopo il seed
           }
-
-          seeded = true;
-          setGalleryImages(remote);
-          writeLS(remote);
-          setSyncStatus('synced');
-        },
-        (error) => {
-          console.warn('[WebDog] Firebase gallery onValue error:', error.message);
-          setSyncStatus('error');
         }
-      );
-    });
+
+        seeded = true;
+        setGalleryImages(remote);
+        writeLS(remote);
+        setSyncStatus('synced');
+      },
+      (error) => {
+        console.warn('[WebDog] Firebase gallery onValue error:', error.message);
+        setSyncStatus('error');
+      }
+    );
 
     return () => {
-      unsubscribeAuth();
-      if (unsubscribeOnValue) unsubscribeOnValue();
+      unsubscribeOnValue();
     };
   }, [defaultImages]);
 
