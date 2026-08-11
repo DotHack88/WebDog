@@ -1061,10 +1061,10 @@ Messaggio: ${contactForm.message}`
       return;
     }
 
-    if (confirmedBookings.length >= 3) {
+    if (confirmedBookings.length >= 10) {
       triggerToast(
         'Limite Raggiunto',
-        'L\'operatore ha raggiunto il limite massimo di 3 appuntamenti per questo giorno.',
+        'L\'operatore ha raggiunto il limite massimo di 10 appuntamenti per questo giorno.',
         'error',
         'Calendario'
       );
@@ -1126,7 +1126,7 @@ Messaggio: ${contactForm.message}`
               blockReason = `Il giorno ${dDate.getDate()} ha già appuntamenti e non può accettare soggiorni a giornata intera.`;
               break;
             }
-            if (bookingsOnDate.length >= 3) {
+            if (bookingsOnDate.length >= 10) {
               blockReason = `Il giorno ${dDate.getDate()} ha raggiunto il limite massimo di appuntamenti.`;
               break;
             }

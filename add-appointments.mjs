@@ -2,13 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, push } from 'firebase/database';
 
 const firebaseConfig = {
-  apiKey:            'AIzaSyDLgK3NAYMAVN8vOR0Xts85PmKGSl7JliI',
-  authDomain:        'webdog-bookings.firebaseapp.com',
-  databaseURL:       'https://webdog-bookings-default-rtdb.europe-west1.firebasedatabase.app',
-  projectId:         'webdog-bookings',
-  storageBucket:     'webdog-bookings.firebasestorage.app',
-  messagingSenderId: '920474613807',
-  appId:             '1:920474613807:web:3a800e7fbde166d71d2eda',
+  apiKey:            'AIzaSyBPHEet9Vzmh6EA0b4KREkYZ_Rq39A1xwc',
+  authDomain:        'webdog-app.firebaseapp.com',
+  databaseURL:       'https://webdog-app-default-rtdb.firebaseio.com/',
+  projectId:         'webdog-app',
+  storageBucket:     'webdog-app.firebasestorage.app',
+  messagingSenderId: '1065242505942',
+  appId:             '1:1065242505942:web:f7bbe44fefa7bfe609cf77',
 };
 
 const app = initializeApp(firebaseConfig);
@@ -20,7 +20,6 @@ function createRange(startD, startM, endD, endM, data) {
     const end = new Date(2026, endM - 1, endD);
     const arr = [];
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        // format date to YYYY-MM-DD local time to avoid timezone offset issues
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
