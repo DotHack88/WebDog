@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Send } from 'lucide-react';
 
 /**
@@ -36,7 +36,7 @@ export default function ContactSection({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {[
                   { bg: '#ccfbf1', color: '#0f766e', icon: <Phone size={18} />, label: 'TELEFONO & WHATSAPP', value: '+39 346 7251989', href: 'tel:+393467251989' },
-                  { bg: '#e0f2fe', color: '#0284c7', icon: <Mail size={18} />, label: 'EMAIL CONTATTO', value: 'info@webdog.it', href: 'mailto:info@webdog.it' },
+                  { bg: '#e0f2fe', color: '#0284c7', icon: <Mail size={18} />, label: 'EMAIL CONTATTO', value: 'emanuelebarese@gmail.com', href: 'mailto:emanuelebarese@gmail.com' },
                 ].map(({ bg, color, icon, label, value, href }) => (
                   <div key={label} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div style={{ background: bg, color, width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -60,7 +60,7 @@ export default function ContactSection({
                       style={{ textDecoration: 'none', color: 'inherit' }}
                       target="_blank" rel="noopener noreferrer"
                     >
-                      <strong style={{ fontSize: '0.95rem' }}>Via Raffaele Ruggiero, 219, 80126 Napoli (NA)</strong>
+                      <strong style={{ fontSize: '0.95rem' }}>SmartDog - Via Raffaele Ruggiero, 219, 80126 Napoli (NA)</strong>
                     </a>
                   </div>
                 </div>
@@ -69,7 +69,7 @@ export default function ContactSection({
               <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
                 <a href="tel:+393467251989" className="btn btn-primary" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', borderRadius: '8px' }}>📞 Chiama</a>
                 <a href="https://wa.me/393467251989" className="btn btn-secondary" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', borderRadius: '8px', background: '#25d366', color: 'white', borderColor: 'transparent' }}>💬 WhatsApp</a>
-                <a href="mailto:info@webdog.it" className="btn btn-outline" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', borderRadius: '8px' }}>📧 Scrivi</a>
+                <a href="mailto:emanuelebarese@gmail.com" className="btn btn-outline" style={{ flex: 1, padding: '10px', fontSize: '0.8rem', borderRadius: '8px' }}>📧 Scrivi</a>
               </div>
             </div>
 
@@ -80,9 +80,9 @@ export default function ContactSection({
                 <iframe
                   width="100%" height="100%" frameBorder="0"
                   scrolling="no" marginHeight="0" marginWidth="0"
-                  src="https://maps.google.com/maps?width=100%25&height=100%25&hl=it&q=Napoli+(Area%20Copertura)&t=&z=10&ie=UTF8&iwloc=B&output=embed"
+                  src="https://maps.google.com/maps?width=100%25&height=100%25&hl=it&q=Città+Metropolitana+di+Napoli,+Italia&t=&z=10&ie=UTF8&iwloc=B&output=embed"
                   style={{ border: 0 }} allowFullScreen="" loading="lazy"
-                />
+                 />
                 <span style={{
                   position: 'absolute', bottom: '8px', left: '8px',
                   fontSize: '0.65rem', fontWeight: 700,
@@ -114,8 +114,24 @@ export default function ContactSection({
 
               <div style={{ marginBottom: '16px' }}>
                 <label className="form-label">TELEFONO CELLULARE</label>
-                <input type="tel" placeholder="3334567890" required className="form-input"
-                  value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    className="form-input"
+                    style={{ width: 'auto', padding: '0 8px', maxWidth: '100px' }}
+                    value={contactForm.phonePrefix}
+                    onChange={(e) => setContactForm({ ...contactForm, phonePrefix: e.target.value })}
+                  >
+                    <option value="+39">🇮🇹 +39</option>
+                    <option value="+41">🇨🇭 +41</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+49">🇩🇪 +49</option>
+                    <option value="+33">🇫🇷 +33</option>
+                    <option value="+34">🇪🇸 +34</option>
+                    <option value="+1">🇺🇸 +1</option>
+                  </select>
+                  <input type="tel" placeholder="3334567890" required className="form-input" style={{ flex: 1 }}
+                    value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
+                </div>
               </div>
 
               <div style={{ marginBottom: '20px' }}>

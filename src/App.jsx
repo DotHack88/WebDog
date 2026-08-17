@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRealtimeBookings } from './hooks/useRealtimeBookings';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useRateLimit } from './hooks/useRateLimit';
-import { validateItalianPhone, validateEmail, validateRequired } from './utils/validation';
+import { validatePhone, validateEmail, validateRequired } from './utils/validation';
 import {
   Mail,
   MessageSquare, X, Eye, Copy
@@ -134,6 +134,7 @@ export default function App() {
   const [bookingForm, setBookingForm] = useState({
     firstName: '',
     lastName: '',
+    phonePrefix: '+39',
     phone: '',
     email: '',
     dogName: '',
@@ -153,6 +154,7 @@ export default function App() {
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
+    phonePrefix: '+39',
     phone: '',
     message: ''
   });
@@ -165,7 +167,7 @@ export default function App() {
     const saved = localStorage.getItem('webdog_notification_logs');
     return saved ? JSON.parse(saved) : [
       { title: 'Conferma Prenotazione Inviata', details: 'A: marco.rossi@gmail.com - Servizio: Dog Sitting - Stato: Successo', time: '5 minuti fa', chan: 'Email' },
-      { title: 'Nuovo Messaggio Contatto', details: 'A: info@webdog.it - Da: alessandro.n@example.com - Stato: Successo', time: '12 minuti fa', chan: 'Email' },
+      { title: 'Nuovo Messaggio Contatto', details: 'A: emanuelebarese@gmail.com - Da: alessandro.n@example.com - Stato: Successo', time: '12 minuti fa', chan: 'Email' },
       { title: 'Modifica Appuntamento Spedito', details: 'A: giulia.b@domain.com - Data: 12/06 - Stato: Letto', time: '1 ora fa', chan: 'Email' },
       { title: 'Promemoria Appuntamento (24h pre)', details: 'A: lorenzo.v@test.it - Stato: Eseguito', time: 'Ieri, 18:30', chan: 'Telegram Bot' }
     ];
@@ -310,7 +312,8 @@ export default function App() {
     }
 
     // ── Validazione campi ─────────────────────────────────────
-    const phoneCheck = validateItalianPhone(bookingForm.phone);
+    const fullPhone = `${bookingForm.phonePrefix || '+39'} ${bookingForm.phone}`;
+    const phoneCheck = validatePhone(fullPhone);
     if (!phoneCheck.valid) {
       triggerToast('Numero non valido', phoneCheck.message, 'error', 'Validazione');
       return;
@@ -373,7 +376,7 @@ Grazie per aver effettuato una prenotazione con WebDog! Di seguito trovi i detta
 
 🐾 DETTAGLI CLIENTE:
 Nome: ${bookingForm.firstName} ${bookingForm.lastName}
-Telefono: ${bookingForm.phone}
+Telefono: ${fullPhone}
 Email: ${bookingForm.email}
 
 🐶 DETTAGLI CANE:
@@ -394,114 +397,89 @@ Ti ricontatteremo a breve per confermare la disponibilità definitiva dello slot
 Cordiali saluti,
 Staff WebDog
 Napoli e Provincia
-info@webdog.it`,
+emanuelebarese@gmail.com`,
       bodyHtml: `<!DOCTYPE html>
 <html lang="it">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f0fdf4;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;padding:32px 0;">
+<body style="margin:0;padding:0;background-color:#f4f7f6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f6;padding:40px 10px;">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.06);">
+        
         <!-- HEADER -->
         <tr>
-          <td style="background:linear-gradient(135deg,#0f766e 0%,#14b8a6 60%,#2dd4bf 100%);padding:36px 32px;text-align:center;">
-            <div style="font-size:48px;margin-bottom:8px;">🐾</div>
-            <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:-0.5px;">WebDog</h1>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:500;">Educazione · Benessere · Cura del Tuo Cane</p>
-            <div style="margin-top:16px;display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:6px 18px;">
-              <span style="color:#ffffff;font-size:13px;font-weight:700;">📋 CONFERMA PRENOTAZIONE</span>
-            </div>
+          <td style="background-color:#0f766e;background-image:linear-gradient(135deg, #0f766e 0%, #14b8a6 60%, #2dd4bf 100%);padding:40px 30px;text-align:center;">
+            <div style="font-size:36px;margin-bottom:12px;background:rgba(255,255,255,0.1);display:inline-block;padding:12px 14px;border-radius:50%;">🐾</div>
+            <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">WebDog</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Conferma Prenotazione</p>
           </td>
         </tr>
 
-        <!-- GREETING -->
+        <!-- GREETING & STATUS -->
         <tr>
-          <td style="padding:32px 32px 0;">
-            <h2 style="margin:0 0 8px;color:#0f2d2a;font-size:22px;font-weight:700;">Ciao ${bookingForm.firstName}! 👋</h2>
-            <p style="margin:0;color:#475569;font-size:15px;line-height:1.6;">
-              La tua richiesta di appuntamento con <strong style="color:#0f766e;">WebDog</strong> è stata ricevuta con successo.<br/>
-              Sei in ottima compagnia — sia tu che <strong>${bookingForm.dogName}</strong>! 🐶
+          <td style="padding:35px 35px 0;">
+            <h2 style="margin:0 0 10px;color:#0f172a;font-size:20px;font-weight:700;">Ciao ${bookingForm.firstName}! 👋</h2>
+            <p style="margin:0 0 25px;color:#475569;font-size:15px;line-height:1.6;">
+              Abbiamo ricevuto la tua richiesta per <strong style="color:#0f766e;">${bookingForm.dogName}</strong>.<br/>Il nostro team la sta esaminando.
             </p>
-          </td>
-        </tr>
-
-        <!-- STATUS BADGE -->
-        <tr>
-          <td style="padding:20px 32px 0;">
-            <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:10px;">
-              <span style="font-size:20px;">⏳</span>
-              <div>
-                <strong style="color:#92400e;font-size:14px;">STATO: IN ATTESA DI CONFERMA</strong>
-                <p style="margin:2px 0 0;color:#78350f;font-size:13px;">Ti contatteremo entro 24h per confermare la disponibilità.</p>
-              </div>
+            
+            <div style="background-color:#fef9c3;border-left:4px solid #eab308;padding:16px 20px;border-radius:0 8px 8px 0;margin-bottom:30px;">
+              <h3 style="margin:0 0 4px;color:#854d0e;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">⏳ In attesa di conferma</h3>
+              <p style="margin:0;color:#a16207;font-size:13px;">Ti contatteremo entro 24h per confermare lo slot temporale.</p>
             </div>
           </td>
         </tr>
 
-        <!-- SECTION: CLIENTE -->
+        <!-- DETAILS SECTIONS -->
         <tr>
-          <td style="padding:24px 32px 0;">
-            <div style="background:#f8fafc;border-radius:12px;padding:20px;border-left:4px solid #0f766e;">
-              <h3 style="margin:0 0 14px;color:#0f766e;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">🐾 Dettagli Cliente</h3>
-              <table width="100%" cellpadding="4" cellspacing="0">
-                <tr><td style="color:#64748b;font-size:13px;width:120px;">Nome completo</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.firstName} ${bookingForm.lastName}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Telefono</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.phone}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Email</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.email}</td></tr>
+          <td style="padding:0 35px;">
+            <!-- CLIENT DETAILS -->
+            <div style="margin-bottom:25px;">
+              <h3 style="margin:0 0 12px;color:#94a3b8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">👤 Dettagli Cliente</h3>
+              <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;" width="40%">Nome completo</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${bookingForm.firstName} ${bookingForm.lastName}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Telefono</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${fullPhone}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Email</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${bookingForm.email}</td></tr>
               </table>
             </div>
-          </td>
-        </tr>
 
-        <!-- SECTION: CANE -->
-        <tr>
-          <td style="padding:16px 32px 0;">
-            <div style="background:#f0fdf4;border-radius:12px;padding:20px;border-left:4px solid #22c55e;">
-              <h3 style="margin:0 0 14px;color:#15803d;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">🐶 Il Tuo Amico a 4 Zampe</h3>
-              <table width="100%" cellpadding="4" cellspacing="0">
-                <tr><td style="color:#64748b;font-size:13px;width:120px;">Nome</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.dogName}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Razza</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.dogBreed}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Età</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.dogAge}</td></tr>
+            <!-- DOG DETAILS -->
+            <div style="margin-bottom:25px;">
+              <h3 style="margin:0 0 12px;color:#94a3b8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">🐶 Il tuo amico a 4 zampe</h3>
+              <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;" width="40%">Nome</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${bookingForm.dogName}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Razza</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${bookingForm.dogBreed}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Età</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${bookingForm.dogAge}</td></tr>
               </table>
             </div>
-          </td>
-        </tr>
 
-        <!-- SECTION: APPUNTAMENTO -->
-        <tr>
-          <td style="padding:16px 32px 0;">
-            <div style="background:#eff6ff;border-radius:12px;padding:20px;border-left:4px solid #3b82f6;">
-              <h3 style="margin:0 0 14px;color:#1d4ed8;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">📅 Dettagli Appuntamento</h3>
-              <table width="100%" cellpadding="4" cellspacing="0">
-                <tr><td style="color:#64748b;font-size:13px;width:120px;">Servizio</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${bookingForm.service}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Data</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${dateFormatted}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Orario</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">${bookingForm.time}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Prezzo stimato</td><td style="color:#0f2d2a;font-size:14px;font-weight:700;">€${selectedDetails.price}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Pagamento</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${bookingForm.paymentMethod.toUpperCase()}</td></tr>
-                ${bookingForm.notes ? `<tr><td style="color:#64748b;font-size:13px;">Note</td><td style="color:#0f2d2a;font-size:14px;font-style:italic;">${bookingForm.notes}</td></tr>` : ''}
+            <!-- BOOKING DETAILS -->
+            <div style="margin-bottom:30px;">
+              <h3 style="margin:0 0 12px;color:#94a3b8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">📅 Dettagli Appuntamento</h3>
+              <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;" width="40%">Servizio</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${bookingForm.service}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Data</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${dateFormatted}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Orario</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${bookingForm.time}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Prezzo stimato</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">€${selectedDetails.price}</td></tr>
+                <tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Pagamento</td><td align="right" style="padding:8px 0;color:#0f172a;font-weight:600;border-bottom:1px dashed #f1f5f9;">${bookingForm.paymentMethod.toUpperCase()}</td></tr>
+                ${bookingForm.notes ? `<tr><td style="padding:8px 0;color:#64748b;border-bottom:1px dashed #f1f5f9;">Note</td><td align="right" style="padding:8px 0;color:#0f172a;font-style:italic;border-bottom:1px dashed #f1f5f9;">${bookingForm.notes}</td></tr>` : ''}
               </table>
             </div>
-          </td>
-        </tr>
-
-        <!-- CTA -->
-        <tr>
-          <td style="padding:28px 32px 0;text-align:center;">
-            <p style="margin:0 0 12px;color:#475569;font-size:14px;">Hai domande? Contattaci direttamente!</p>
-            <a href="https://wa.me/393467251989" style="display:inline-block;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;margin-right:8px;">💬 WhatsApp</a>
-            <a href="mailto:info@webdog.it" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;">📧 Email</a>
           </td>
         </tr>
 
         <!-- FOOTER -->
         <tr>
-          <td style="padding:32px;text-align:center;border-top:1px solid #e2e8f0;margin-top:24px;">
-            <p style="margin:0 0 4px;font-size:20px;">🐕</p>
-            <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 WebDog · Napoli e Provincia · info@webdog.it</p>
-            <p style="margin:4px 0 0;color:#cbd5e1;font-size:11px;">Questa email è stata inviata automaticamente a seguito della tua prenotazione.</p>
+          <td style="background-color:#f8fafc;padding:35px 30px;text-align:center;border-top:1px solid #e2e8f0;">
+            <p style="margin:0 0 16px;color:#334155;font-size:14px;font-weight:600;">Hai domande urgenti?</p>
+            <div style="margin-bottom:25px;">
+              <a href="https://wa.me/393467251989" style="display:inline-block;padding:12px 24px;background-color:#25D366;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:8px;margin-right:8px;">💬 WhatsApp</a>
+              <a href="mailto:emanuelebarese@gmail.com" style="display:inline-block;padding:12px 24px;background-color:#0f172a;color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;border-radius:8px;">✉️ Inviaci un'email</a>
+            </div>
+            <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 WebDog · Napoli e Provincia</p>
+            <p style="margin:6px 0 0;color:#cbd5e1;font-size:11px;">Questa è un'email generata automaticamente, ti preghiamo di non rispondere direttamente a questo indirizzo.</p>
           </td>
         </tr>
-
       </table>
     </td></tr>
   </table>
@@ -509,7 +487,7 @@ info@webdog.it`,
 </html>`,
       whatsappText: `Nuova Prenotazione WebDog!
 Cliente: ${bookingForm.firstName} ${bookingForm.lastName}
-Telefono: ${bookingForm.phone}
+Telefono: ${fullPhone}
 Email: ${bookingForm.email}
 Cane: ${bookingForm.dogName} (${bookingForm.dogBreed}, ${bookingForm.dogAge})
 Servizio: ${bookingForm.service}
@@ -519,14 +497,10 @@ Pagamento: ${bookingForm.paymentMethod}
 Note: ${bookingForm.notes || 'Nessuna nota'}`
     };
 
-    // ✅ FIX: Silent background send — works on Android/iOS without user interaction
+    // ✅ Silent background send — works on all devices (Android/iOS/Desktop)
+    // NOTE: Do NOT open EmailModal automatically — it fires its own send via useEffect,
+    // which would cause a duplicate email. The modal is only for manual retries from admin.
     sendEmailJSSilent(emailData);
-
-    // Show modal only on desktop as secondary/manual option
-    const isMobile = window.innerWidth <= 768;
-    if (!isMobile) {
-      setEmailModalData(emailData);
-    }
 
     // Confirmation toast to the user
     triggerToast(
@@ -550,6 +524,7 @@ Note: ${bookingForm.notes || 'Nessuna nota'}`
     setBookingForm({
       firstName: '',
       lastName: '',
+      phonePrefix: '+39',
       phone: '',
       email: '',
       dogName: '',
@@ -610,6 +585,18 @@ Note: ${bookingForm.notes || 'Nessuna nota'}`
       );
     }, 2000);
 
+    // ✅ Silent email alert to admin
+    const adminEmailData = {
+      type: 'review',
+      toEmail: 'admin@webdog.it', // Fictional fallback, adminEmail handles from .env
+      toName: 'Admin WebDog',
+      subject: `Nuova Recensione WebDog - ${reviewForm.name}`,
+      clientEmail: 'emanuelebarese@gmail.com',
+      bodyText: `Nuova recensione ricevuta!\n\nCliente: ${reviewForm.name}\nCane: ${reviewForm.dogName} (${reviewForm.dogBreed})\nValutazione: ${reviewForm.rating}/5\n\nCommento:\n"${reviewForm.comment}"`,
+      bodyHtml: `<h3>Nuova Recensione Ricevuta!</h3><p><b>Cliente:</b> ${reviewForm.name}</p><p><b>Cane:</b> ${reviewForm.dogName} (${reviewForm.dogBreed})</p><p><b>Valutazione:</b> ${reviewForm.rating}/5 stelle</p><p><b>Commento:</b><br/>"${reviewForm.comment}"</p>`
+    };
+    sendEmailJSSilent(adminEmailData);
+
     setReviewForm({
       name: '',
       dogName: '',
@@ -662,7 +649,8 @@ Note: ${bookingForm.notes || 'Nessuna nota'}`
       triggerToast('Email non valida', emailCheck.message, 'error', 'Validazione');
       return;
     }
-    const phoneCheck = validateItalianPhone(contactForm.phone);
+    const contactFullPhone = `${contactForm.phonePrefix || '+39'} ${contactForm.phone}`;
+    const phoneCheck = validatePhone(contactFullPhone);
     if (!phoneCheck.valid) {
       triggerToast('Numero non valido', phoneCheck.message, 'error', 'Validazione');
       return;
@@ -696,7 +684,7 @@ ${contactForm.name}
 ${contactForm.email}
 
 📞 TELEFONO CELLULARE:
-${contactForm.phone}
+${contactFullPhone}
 
 💬 IL TUO MESSAGGIO:
 "${contactForm.message}"
@@ -706,7 +694,7 @@ Ti risponderemo via email o sul numero di cellulare fornito entro poche ore.
 Cordiali saluti,
 Staff WebDog
 Napoli e Provincia
-info@webdog.it`,
+emanuelebarese@gmail.com`,
       bodyHtml: `<!DOCTYPE html>
 <html lang="it">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -755,7 +743,7 @@ info@webdog.it`,
               <table width="100%" cellpadding="4" cellspacing="0">
                 <tr><td style="color:#64748b;font-size:13px;width:120px;">Nome</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${contactForm.name}</td></tr>
                 <tr><td style="color:#64748b;font-size:13px;">Email</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${contactForm.email}</td></tr>
-                <tr><td style="color:#64748b;font-size:13px;">Telefono</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${contactForm.phone}</td></tr>
+                <tr><td style="color:#64748b;font-size:13px;">Telefono</td><td style="color:#0f2d2a;font-size:14px;font-weight:600;">${contactFullPhone}</td></tr>
               </table>
             </div>
           </td>
@@ -777,7 +765,7 @@ info@webdog.it`,
           <td style="padding:28px 32px 0;text-align:center;">
             <p style="margin:0 0 12px;color:#475569;font-size:14px;">Non vedi l'ora? Scrivi direttamente!</p>
             <a href="https://wa.me/393467251989" style="display:inline-block;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;margin-right:8px;">💬 WhatsApp</a>
-            <a href="mailto:info@webdog.it" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;">📧 Email</a>
+            <a href="mailto:emanuelebarese@gmail.com" style="display:inline-block;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;">📧 Email</a>
           </td>
         </tr>
 
@@ -785,7 +773,7 @@ info@webdog.it`,
         <tr>
           <td style="padding:32px;text-align:center;border-top:1px solid #e2e8f0;margin-top:24px;">
             <p style="margin:0 0 4px;font-size:20px;">🐕</p>
-            <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 WebDog · Napoli e Provincia · info@webdog.it</p>
+            <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 WebDog · Napoli e Provincia · emanuelebarese@gmail.com</p>
             <p style="margin:4px 0 0;color:#cbd5e1;font-size:11px;">Questa email è stata generata automaticamente dal modulo messaggi del sito.</p>
           </td>
         </tr>
@@ -797,7 +785,7 @@ info@webdog.it`,
 </html>`,
       whatsappText: `Nuovo Messaggio da WebDog!
 Nome: ${contactForm.name}
-Telefono: ${contactForm.phone}
+Telefono: ${contactFullPhone}
 Email: ${contactForm.email}
 Messaggio: ${contactForm.message}`
     };
@@ -813,10 +801,11 @@ Messaggio: ${contactForm.message}`
 
     triggerToast('✅ Messaggio Inviato!', `Grazie ${contactForm.name}! Il tuo messaggio è stato consegnato al gestore WebDog.`, 'success', 'System');
     
-    // Reset Contact Form
+    // Reset Form
     setContactForm({
       name: '',
       email: '',
+      phonePrefix: '+39',
       phone: '',
       message: ''
     });
@@ -1720,7 +1709,7 @@ function EmailModal({ data, onClose, triggerToast, addNotificationLog }) {
   }, []);
 
   const triggerMailto = () => {
-    const adminEmail = config.adminEmail || 'info@webdog.it';
+    const adminEmail = config.adminEmail || 'emanuelebarese@gmail.com';
     // Send to admin with client in CC
     const mailtoUrl = `mailto:${adminEmail}?cc=${encodeURIComponent(data.toEmail)}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(data.bodyText)}`;
     window.location.href = mailtoUrl;

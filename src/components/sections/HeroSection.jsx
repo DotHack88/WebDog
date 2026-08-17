@@ -116,8 +116,8 @@ export default function HeroSection({ reviewsCount, bookingsCount }) {
             }}>
               <Heart size={20} style={{ color: '#ef4444', fill: '#ef4444' }} />
               <div>
-                <h5 style={{ fontWeight: 800, fontSize: '0.9rem' }}>Assistenza 24/7</h5>
-                <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Sempre al sicuro</p>
+                <h5 style={{ fontWeight: 800, fontSize: '0.9rem' }}>Risposta in 24h</h5>
+                <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Prenotazione facile</p>
               </div>
             </div>
           </div>

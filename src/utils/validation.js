@@ -3,13 +3,13 @@
  */
 
 /**
- * Valida un numero di telefono italiano (mobile o fisso).
- * Accetta formati: +39XXXXXXXXXX, 0039XXXXXXXXXX, 3XXXXXXXXX, 0XXXXXXXXX
+ * Valida un numero di telefono (mobile o fisso).
+ * Accetta prefissi internazionali.
  *
  * @param {string} phone
  * @returns {{ valid: boolean, message: string }}
  */
-export function validateItalianPhone(phone) {
+export function validatePhone(phone) {
   if (!phone || phone.trim() === '') {
     return { valid: false, message: 'Il numero di telefono è obbligatorio.' };
   }
@@ -17,14 +17,13 @@ export function validateItalianPhone(phone) {
   // Rimuove spazi, trattini, punti
   const cleaned = phone.replace(/[\s\-\.]/g, '');
 
-  // Regex italiana: mobile (3xx) o fisso (0xx), con o senza prefisso +39/0039
-  const italianMobile = /^(\+39|0039)?3\d{8,9}$/;
-  const italianLandline = /^(\+39|0039)?0\d{6,10}$/;
+  // Almeno 8 cifre, opzionalmente un + all'inizio
+  const internationalPhone = /^\+?\d{8,15}$/;
 
-  if (!italianMobile.test(cleaned) && !italianLandline.test(cleaned)) {
+  if (!internationalPhone.test(cleaned)) {
     return {
       valid: false,
-      message: 'Inserisci un numero italiano valido (es. 3331234567 o +393331234567).'
+      message: 'Inserisci un numero di telefono valido.'
     };
   }
 

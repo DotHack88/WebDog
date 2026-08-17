@@ -149,8 +149,24 @@ export default function BookingSection({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
                   <label className="form-label">TELEFONO</label>
-                  <input type="tel" placeholder="3334567890" required className="form-input"
-                    value={bookingForm.phone} onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })} />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <select
+                      className="form-input"
+                      style={{ width: 'auto', padding: '0 8px', maxWidth: '80px' }}
+                      value={bookingForm.phonePrefix}
+                      onChange={(e) => setBookingForm({ ...bookingForm, phonePrefix: e.target.value })}
+                    >
+                      <option value="+39">🇮🇹 +39</option>
+                      <option value="+41">🇨🇭 +41</option>
+                      <option value="+44">🇬🇧 +44</option>
+                      <option value="+49">🇩🇪 +49</option>
+                      <option value="+33">🇫🇷 +33</option>
+                      <option value="+34">🇪🇸 +34</option>
+                      <option value="+1">🇺🇸 +1</option>
+                    </select>
+                    <input type="tel" placeholder="3334567890" required className="form-input" style={{ flex: 1 }}
+                      value={bookingForm.phone} onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })} />
+                  </div>
                 </div>
                 <div>
                   <label className="form-label">E-MAIL</label>
