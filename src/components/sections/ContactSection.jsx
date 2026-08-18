@@ -56,11 +56,11 @@ export default function ContactSection({
                   <div>
                     <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', fontWeight: 600 }}>INDIRIZZO SEDE & CAMPO</span>
                     <a
-                      href="https://www.google.com/maps/place/Smart+Dog+Napoli/@40.8381864,14.1673849,17z"
+                      href="https://www.google.com/maps/place/Smart+Dog+Napoli/@40.8381864,14.1673849,17z/data=!4m6!3m5!1s0x133b0eddfa13099d:0xfe5131a0f30b3f4e!8m2!3d40.8381824!4d14.1699598!16s%2Fg%2F11cp09wn6m?entry=ttu&g_ep=EgoyMDI2MDgxMi4wIKXMDSoASAFQAw%3D%3D"
                       style={{ textDecoration: 'none', color: 'inherit' }}
                       target="_blank" rel="noopener noreferrer"
                     >
-                      <strong style={{ fontSize: '0.95rem' }}>SmartDog - Via Raffaele Ruggiero, 219, 80126 Napoli (NA)</strong>
+                      <strong style={{ fontSize: '0.95rem' }}>Smart Dog Napoli - Via Raffaele Ruggiero, 219, 80125 Napoli NA</strong>
                     </a>
                   </div>
                 </div>
@@ -122,11 +122,48 @@ export default function ContactSection({
                     onChange={(e) => setContactForm({ ...contactForm, phonePrefix: e.target.value })}
                   >
                     <option value="+39">🇮🇹 +39</option>
-                    <option value="+41">🇨🇭 +41</option>
-                    <option value="+44">🇬🇧 +44</option>
-                    <option value="+49">🇩🇪 +49</option>
+                    <option value="+355">🇦🇱 +355</option>
+                    <option value="+376">🇦🇩 +376</option>
+                    <option value="+43">🇦🇹 +43</option>
+                    <option value="+32">🇧🇪 +32</option>
+                    <option value="+387">🇧🇦 +387</option>
+                    <option value="+359">🇧🇬 +359</option>
+                    <option value="+357">🇨🇾 +357</option>
+                    <option value="+385">🇭🇷 +385</option>
+                    <option value="+45">🇩🇰 +45</option>
+                    <option value="+372">🇪🇪 +372</option>
+                    <option value="+358">🇫🇮 +358</option>
                     <option value="+33">🇫🇷 +33</option>
+                    <option value="+49">🇩🇪 +49</option>
+                    <option value="+30">🇬🇷 +30</option>
+                    <option value="+353">🇮🇪 +353</option>
+                    <option value="+354">🇮🇸 +354</option>
+                    <option value="+383">🇽🇰 +383</option>
+                    <option value="+371">🇱🇻 +371</option>
+                    <option value="+423">🇱🇮 +423</option>
+                    <option value="+370">🇱🇹 +370</option>
+                    <option value="+352">🇱🇺 +352</option>
+                    <option value="+389">🇲🇰 +389</option>
+                    <option value="+356">🇲🇹 +356</option>
+                    <option value="+373">🇲🇩 +373</option>
+                    <option value="+377">🇲🇨 +377</option>
+                    <option value="+382">🇲🇪 +382</option>
+                    <option value="+47">🇳🇴 +47</option>
+                    <option value="+31">🇳🇱 +31</option>
+                    <option value="+48">🇵🇱 +48</option>
+                    <option value="+351">🇵🇹 +351</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+420">🇨🇿 +420</option>
+                    <option value="+40">🇷🇴 +40</option>
+                    <option value="+378">🇸🇲 +378</option>
+                    <option value="+381">🇷🇸 +381</option>
+                    <option value="+421">🇸🇰 +421</option>
+                    <option value="+386">🇸🇮 +386</option>
                     <option value="+34">🇪🇸 +34</option>
+                    <option value="+46">🇸🇪 +46</option>
+                    <option value="+41">🇨🇭 +41</option>
+                    <option value="+380">🇺🇦 +380</option>
+                    <option value="+36">🇭🇺 +36</option>
                     <option value="+1">🇺🇸 +1</option>
                   </select>
                   <input type="tel" placeholder="3334567890" required className="form-input" style={{ flex: 1 }}
