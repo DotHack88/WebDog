@@ -150,20 +150,23 @@ export default function BookingSection({
                 <div>
                   <label className="form-label">TELEFONO</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <select
+                    <input
+                      list="phone-prefixes-booking"
                       className="form-input"
-                      style={{ width: 'auto', padding: '0 8px', maxWidth: '80px' }}
+                      style={{ width: 'auto', padding: '0 8px', maxWidth: '100px' }}
                       value={bookingForm.phonePrefix}
                       onChange={(e) => setBookingForm({ ...bookingForm, phonePrefix: e.target.value })}
-                    >
-                      <option value="+39">🇮🇹 +39</option>
-                      <option value="+41">🇨🇭 +41</option>
-                      <option value="+44">🇬🇧 +44</option>
-                      <option value="+49">🇩🇪 +49</option>
-                      <option value="+33">🇫🇷 +33</option>
-                      <option value="+34">🇪🇸 +34</option>
-                      <option value="+1">🇺🇸 +1</option>
-                    </select>
+                      placeholder="+39"
+                    />
+                    <datalist id="phone-prefixes-booking">
+                      <option value="+39">Italia 🇮🇹</option>
+                      <option value="+41">Svizzera 🇨🇭</option>
+                      <option value="+44">Regno Unito 🇬🇧</option>
+                      <option value="+49">Germania 🇩🇪</option>
+                      <option value="+33">Francia 🇫🇷</option>
+                      <option value="+34">Spagna 🇪🇸</option>
+                      <option value="+1">Stati Uniti / Canada 🇺🇸</option>
+                    </datalist>
                     <input type="tel" placeholder="3334567890" required className="form-input" style={{ flex: 1 }}
                       value={bookingForm.phone} onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })} />
                   </div>

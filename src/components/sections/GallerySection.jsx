@@ -27,6 +27,9 @@ export default function GallerySection({
 
   // Album lightbox state: when opening an album card we track the album and slide index separately
   const [albumLightbox, setAlbumLightbox] = useState(null); // { images: [], slideIdx: 0, title, desc, category }
+  
+  // State for inline text expansion
+  const [expandedDescId, setExpandedDescId] = useState(null);
 
   const openAlbum = (img, startIdx = 0) => {
     const albumImages = (img.album && img.album.length > 1) ? img.album : [img.src];
@@ -106,9 +109,9 @@ export default function GallerySection({
                   key={img.id}
                   onClick={() => handleCardClick(img, index)}
                   className="glass-card"
-                  style={{ overflow: 'hidden', cursor: 'pointer', borderRadius: '16px', position: 'relative' }}
+                  style={{ overflow: 'hidden', cursor: 'pointer', borderRadius: '16px', position: 'relative', display: 'flex', flexDirection: 'column', height: '100%' }}
                 >
-                  <div style={{ overflow: 'hidden', aspectRatio: '4/3', position: 'relative' }}>
+                  <div style={{ overflow: 'hidden', aspectRatio: '4/3', position: 'relative', flexShrink: 0 }}>
                     <img
                       src={img.src}
                       alt={img.title}
@@ -151,12 +154,38 @@ export default function GallerySection({
                       </div>
                     )}
                   </div>
-                  <div style={{ padding: '16px' }}>
-                    <span className="badge" style={{ fontSize: '0.65rem', padding: '2px 8px', marginBottom: '6px' }}>
-                      {img.category}
-                    </span>
-                    <h4 style={{ fontWeight: 800, fontSize: '1rem', color: '#042f2e' }}>{img.title}</h4>
-                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{img.desc}</p>
+                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                    <div style={{ marginBottom: '8px' }}>
+                      <span className="badge" style={{ fontSize: '0.65rem', padding: '2px 8px', marginBottom: '6px' }}>
+                        {img.category}
+                      </span>
+                      <h4 style={{ fontWeight: 800, fontSize: '1rem', color: '#042f2e' }}>{img.title}</h4>
+                    </div>
+                    <div 
+                      style={{ marginTop: 'auto' }}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Previene l'apertura del lightbox
+                        setExpandedDescId(expandedDescId === img.id ? null : img.id);
+                      }}
+                    >
+                      <p style={{ 
+                        fontSize: '0.75rem', 
+                        color: '#64748b', 
+                        margin: 0,
+                        display: expandedDescId === img.id ? 'block' : '-webkit-box',
+                        WebkitLineClamp: expandedDescId === img.id ? 'unset' : 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease'
+                      }}>
+                        {img.desc}
+                      </p>
+                      {img.desc && img.desc.length > 80 && (
+                        <span style={{ fontSize: '0.7rem', color: '#0f766e', fontWeight: 700, marginTop: '6px', display: 'inline-block' }}>
+                          {expandedDescId === img.id ? 'Riduci' : 'Leggi tutto...'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -201,7 +230,7 @@ export default function GallerySection({
               <span>Immagine non disponibile</span>
             </div>
 
-            <div style={{ marginTop: '16px', textAlign: 'center', color: 'white' }}>
+            <div style={{ marginTop: '16px', textAlign: 'center', color: 'white', flexShrink: 0, overflowY: 'auto', maxHeight: '30vh', padding: '0 10px' }}>
               <span className="badge" style={{ color: '#2dd4bf', background: 'rgba(45, 212, 191, 0.1)', borderColor: 'rgba(45, 212, 191, 0.2)', marginBottom: '8px' }}>
                 {filteredGallery[lightboxIndex].category}
               </span>
@@ -254,7 +283,7 @@ export default function GallerySection({
               <span>Immagine non disponibile</span>
             </div>
 
-            <div style={{ marginTop: '16px', textAlign: 'center', color: 'white' }}>
+            <div style={{ marginTop: '16px', textAlign: 'center', color: 'white', flexShrink: 0, overflowY: 'auto', maxHeight: '30vh', padding: '0 10px' }}>
               <span className="badge" style={{ color: '#2dd4bf', background: 'rgba(45, 212, 191, 0.1)', borderColor: 'rgba(45, 212, 191, 0.2)', marginBottom: '8px' }}>
                 {albumLightbox.category}
               </span>

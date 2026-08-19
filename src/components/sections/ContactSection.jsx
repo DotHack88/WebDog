@@ -115,57 +115,64 @@ export default function ContactSection({
               <div style={{ marginBottom: '16px' }}>
                 <label className="form-label">TELEFONO CELLULARE</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <select
+                  <span style={{ fontWeight: 800, color: '#042f2e', fontSize: '1.2rem', paddingRight: '4px' }}>+</span>
+                  <input
+                    list="phone-prefixes-contact"
                     className="form-input"
                     style={{ width: 'auto', padding: '0 8px', maxWidth: '100px' }}
-                    value={contactForm.phonePrefix}
-                    onChange={(e) => setContactForm({ ...contactForm, phonePrefix: e.target.value })}
-                  >
-                    <option value="+39">🇮🇹 +39</option>
-                    <option value="+355">🇦🇱 +355</option>
-                    <option value="+376">🇦🇩 +376</option>
-                    <option value="+43">🇦🇹 +43</option>
-                    <option value="+32">🇧🇪 +32</option>
-                    <option value="+387">🇧🇦 +387</option>
-                    <option value="+359">🇧🇬 +359</option>
-                    <option value="+357">🇨🇾 +357</option>
-                    <option value="+385">🇭🇷 +385</option>
-                    <option value="+45">🇩🇰 +45</option>
-                    <option value="+372">🇪🇪 +372</option>
-                    <option value="+358">🇫🇮 +358</option>
-                    <option value="+33">🇫🇷 +33</option>
-                    <option value="+49">🇩🇪 +49</option>
-                    <option value="+30">🇬🇷 +30</option>
-                    <option value="+353">🇮🇪 +353</option>
-                    <option value="+354">🇮🇸 +354</option>
-                    <option value="+383">🇽🇰 +383</option>
-                    <option value="+371">🇱🇻 +371</option>
-                    <option value="+423">🇱🇮 +423</option>
-                    <option value="+370">🇱🇹 +370</option>
-                    <option value="+352">🇱🇺 +352</option>
-                    <option value="+389">🇲🇰 +389</option>
-                    <option value="+356">🇲🇹 +356</option>
-                    <option value="+373">🇲🇩 +373</option>
-                    <option value="+377">🇲🇨 +377</option>
-                    <option value="+382">🇲🇪 +382</option>
-                    <option value="+47">🇳🇴 +47</option>
-                    <option value="+31">🇳🇱 +31</option>
-                    <option value="+48">🇵🇱 +48</option>
-                    <option value="+351">🇵🇹 +351</option>
-                    <option value="+44">🇬🇧 +44</option>
-                    <option value="+420">🇨🇿 +420</option>
-                    <option value="+40">🇷🇴 +40</option>
-                    <option value="+378">🇸🇲 +378</option>
-                    <option value="+381">🇷🇸 +381</option>
-                    <option value="+421">🇸🇰 +421</option>
-                    <option value="+386">🇸🇮 +386</option>
-                    <option value="+34">🇪🇸 +34</option>
-                    <option value="+46">🇸🇪 +46</option>
-                    <option value="+41">🇨🇭 +41</option>
-                    <option value="+380">🇺🇦 +380</option>
-                    <option value="+36">🇭🇺 +36</option>
-                    <option value="+1">🇺🇸 +1</option>
-                  </select>
+                    value={contactForm.phonePrefix ? contactForm.phonePrefix.replace('+', '') : '39'}
+                    onChange={(e) => {
+                      const val = e.target.value.replace('+', '');
+                      setContactForm({ ...contactForm, phonePrefix: `+${val}` });
+                    }}
+                    placeholder="39"
+                  />
+                  <datalist id="phone-prefixes-contact">
+                    <option value="39">Italia 🇮🇹</option>
+                    <option value="355">Albania 🇦🇱</option>
+                    <option value="376">Andorra 🇦🇩</option>
+                    <option value="43">Austria 🇦🇹</option>
+                    <option value="32">Belgio 🇧🇪</option>
+                    <option value="387">Bosnia 🇧🇦</option>
+                    <option value="359">Bulgaria 🇧🇬</option>
+                    <option value="357">Cipro 🇨🇾</option>
+                    <option value="385">Croazia 🇭🇷</option>
+                    <option value="45">Danimarca 🇩🇰</option>
+                    <option value="372">Estonia 🇪🇪</option>
+                    <option value="358">Finlandia 🇫🇮</option>
+                    <option value="33">Francia 🇫🇷</option>
+                    <option value="49">Germania 🇩🇪</option>
+                    <option value="30">Grecia 🇬🇷</option>
+                    <option value="353">Irlanda 🇮🇪</option>
+                    <option value="354">Islanda 🇮🇸</option>
+                    <option value="383">Kosovo 🇽🇰</option>
+                    <option value="371">Lettonia 🇱🇻</option>
+                    <option value="423">Liechtenstein 🇱🇮</option>
+                    <option value="370">Lituania 🇱🇹</option>
+                    <option value="352">Lussemburgo 🇱🇺</option>
+                    <option value="389">Macedonia 🇲🇰</option>
+                    <option value="356">Malta 🇲🇹</option>
+                    <option value="373">Moldavia 🇲🇩</option>
+                    <option value="377">Monaco 🇲🇨</option>
+                    <option value="382">Montenegro 🇲🇪</option>
+                    <option value="47">Norvegia 🇳🇴</option>
+                    <option value="31">Olanda 🇳🇱</option>
+                    <option value="48">Polonia 🇵🇱</option>
+                    <option value="351">Portogallo 🇵🇹</option>
+                    <option value="44">Regno Unito 🇬🇧</option>
+                    <option value="420">Rep. Ceca 🇨🇿</option>
+                    <option value="40">Romania 🇷🇴</option>
+                    <option value="378">San Marino 🇸🇲</option>
+                    <option value="381">Serbia 🇷🇸</option>
+                    <option value="421">Slovacchia 🇸🇰</option>
+                    <option value="386">Slovenia 🇸🇮</option>
+                    <option value="34">Spagna 🇪🇸</option>
+                    <option value="46">Svezia 🇸🇪</option>
+                    <option value="41">Svizzera 🇨🇭</option>
+                    <option value="380">Ucraina 🇺🇦</option>
+                    <option value="36">Ungheria 🇭🇺</option>
+                    <option value="1">Stati Uniti / Canada 🇺🇸</option>
+                  </datalist>
                   <input type="tel" placeholder="3334567890" required className="form-input" style={{ flex: 1 }}
                     value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
                 </div>
